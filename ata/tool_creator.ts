@@ -90,19 +90,35 @@ this.add_new_method('advanced_${Date.now()}', function() {
   }
 
   private async deploy_tool(tool: ToolSpec): Promise<void> {
-    // Simulate file creation for display
-    console.log(`Tool deployed: ${tool.name} at /ata/generated/${tool.name}.ts`);
-    
-    // Update global file registry
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('fileCreated', {
-        detail: {
-          name: `${tool.name}.ts`,
+    try {
+      // Create actual file via API
+      const response = await fetch('/api/create-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           path: `/ata/generated/${tool.name}.ts`,
-          type: 'file',
-          created: new Date()
+          content: tool.code,
+          name: `${tool.name}.ts`
+        })
+      });
+      
+      if (response.ok) {
+        console.log(`Tool deployed: ${tool.name}`);
+        
+        // Update file explorer
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('fileCreated', {
+            detail: {
+              name: `${tool.name}.ts`,
+              path: `/ata/generated/${tool.name}.ts`,
+              type: 'file',
+              created: new Date()
+            }
+          }));
         }
-      }));
+      }
+    } catch (error) {
+      console.error('Failed to deploy tool:', error);
     }
   }
 

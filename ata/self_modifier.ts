@@ -29,8 +29,23 @@ private enhanced_${Date.now()}() {
   }
 
   private async write_enhanced_code(code: string): Promise<void> {
-    const fs = require('fs').promises;
-    await fs.writeFile(__filename, code);
+    try {
+      const response = await fetch('/api/create-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: `/ata/upgrades/upgrade_${Date.now()}.ts`,
+          content: code,
+          name: `upgrade_${Date.now()}.ts`
+        })
+      });
+      
+      if (response.ok) {
+        console.log('Upgrade file created successfully');
+      }
+    } catch (error) {
+      console.error('Failed to create upgrade file:', error);
+    }
   }
 
   private log_evolution(target: string): void {

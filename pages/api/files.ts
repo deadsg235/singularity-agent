@@ -1,7 +1,26 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import fs from 'fs';
+import path from 'path';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const files = [
+  try {
+    const files = buildFileTree();
+    res.status(200).json({ 
+      files, 
+      timestamp: new Date().toISOString(),
+      totalFiles: countFiles(files)
+    });
+  } catch (error) {
+    // Fallback to static structure if filesystem read fails
+    const files = getStaticFiles();
+    res.status(200).json({ files, timestamp: new Date().toISOString() });
+  }
+}
+
+function buildFileTree() {
+  const basePath = process.cwd();
+  
+  return [
     {
       name: 'ata',
       type: 'folder',
@@ -47,13 +66,48 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       ]
     }
   ];
+}
 
-  // Add timestamp for cache busting
-  res.status(200).json({ 
-    files, 
-    timestamp: new Date().toISOString(),
-    totalFiles: countFiles(files)
-  });
+function getStaticFiles() {
+  return [
+
+  ];
+}
+
+function readDirectory(dirPath: string, relativePath: string = ''): any[] {
+  const items: any[] = [];
+  
+  try {
+    if (fs.existsSync(dirPath)) {
+      const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        const relPath = path.join(relativePath, entry.name).replace(/\\/g, '/');
+        
+        if (entry.isDirectory()) {
+          items.push({
+            name: entry.name,
+            type: 'folder',
+            path: `/${relPath}`,
+            children: readDirectory(fullPath, relPath)
+          });
+        } else if (entry.isFile()) {
+          const stats = fs.statSync(fullPath);
+          items.push({
+            name: entry.name,
+            type: 'file',
+            path: `/${relPath}`,
+            created: stats.birthtime
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error reading directory ${dirPath}:`, error);
+  }
+  
+  return items;
 }
 
 function countFiles(nodes: any[]): number {
