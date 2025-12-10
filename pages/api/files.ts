@@ -16,10 +16,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
           path: '/ata/generated',
           children: [
             { name: 'DataAnalyzer.ts', type: 'file', path: '/ata/generated/DataAnalyzer.ts', created: new Date() },
-            { name: 'CodeOptimizer.ts', type: 'file', path: '/ata/generated/CodeOptimizer.ts', created: new Date() },
-            { name: 'SecurityScanner.ts', type: 'file', path: '/ata/generated/SecurityScanner.ts', created: new Date() },
-            { name: 'PerformanceMonitor.ts', type: 'file', path: '/ata/generated/PerformanceMonitor.ts', created: new Date() }
+            { name: 'CodeOptimizer.ts', type: 'file', path: '/ata/generated/CodeOptimizer.ts', created: new Date() }
           ]
+        },
+        {
+          name: 'upgrades',
+          type: 'folder',
+          path: '/ata/upgrades',
+          children: []
         }
       ]
     },
@@ -44,5 +48,18 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     }
   ];
 
-  res.status(200).json({ files });
+  // Add timestamp for cache busting
+  res.status(200).json({ 
+    files, 
+    timestamp: new Date().toISOString(),
+    totalFiles: countFiles(files)
+  });
+}
+
+function countFiles(nodes: any[]): number {
+  return nodes.reduce((count, node) => {
+    if (node.type === 'file') return count + 1;
+    if (node.children) return count + countFiles(node.children);
+    return count;
+  }, 0);
 }

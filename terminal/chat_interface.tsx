@@ -154,6 +154,7 @@ const ChatInterface: React.FC = () => {
         .main-content {
           display: flex;
           flex: 1;
+          min-height: 0;
         }
         
         .sidebar {
@@ -162,14 +163,16 @@ const ChatInterface: React.FC = () => {
           border-right: 2px solid #440000;
           position: relative;
           z-index: 3;
-          overflow-y: auto;
           flex-shrink: 0;
+          overflow: hidden;
         }
         
         .chat-area {
           flex: 1;
           display: flex;
           flex-direction: column;
+          min-width: 0;
+          overflow: hidden;
         }
         
         .terminal-container::before {

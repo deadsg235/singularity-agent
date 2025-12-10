@@ -14,6 +14,29 @@ const FileExplorer: React.FC = () => {
 
   useEffect(() => {
     loadFileTree();
+    
+    // Listen for file creation events
+    const handleFileCreated = (event: any) => {
+      const newFile = event.detail;
+      setFileTree(prevTree => {
+        const updatedTree = [...prevTree];
+        
+        // Find the correct folder to add the file
+        const targetFolder = findFolder(updatedTree, newFile.path.split('/').slice(0, -1).join('/'));
+        if (targetFolder && targetFolder.children) {
+          // Check if file already exists
+          const exists = targetFolder.children.some(child => child.name === newFile.name);
+          if (!exists) {
+            targetFolder.children.push(newFile);
+          }
+        }
+        
+        return updatedTree;
+      });
+    };
+    
+    window.addEventListener('fileCreated', handleFileCreated);
+    return () => window.removeEventListener('fileCreated', handleFileCreated);
   }, []);
 
   const loadFileTree = async () => {
@@ -24,6 +47,19 @@ const FileExplorer: React.FC = () => {
     } catch {
       setFileTree(getDefaultTree());
     }
+  };
+
+  const findFolder = (tree: FileNode[], path: string): FileNode | null => {
+    for (const node of tree) {
+      if (node.path === path && node.type === 'folder') {
+        return node;
+      }
+      if (node.children) {
+        const found = findFolder(node.children, path);
+        if (found) return found;
+      }
+    }
+    return null;
   };
 
   const getDefaultTree = (): FileNode[] => [
@@ -39,10 +75,13 @@ const FileExplorer: React.FC = () => {
           name: 'generated',
           type: 'folder',
           path: '/ata/generated',
-          children: [
-            { name: 'DataAnalyzer.ts', type: 'file', path: '/ata/generated/DataAnalyzer.ts', created: new Date() },
-            { name: 'CodeOptimizer.ts', type: 'file', path: '/ata/generated/CodeOptimizer.ts', created: new Date() }
-          ]
+          children: []
+        },
+        {
+          name: 'upgrades',
+          type: 'folder',
+          path: '/ata/upgrades',
+          children: []
         }
       ]
     },
@@ -94,11 +133,22 @@ const FileExplorer: React.FC = () => {
     );
   };
 
+  const countFiles = (nodes: FileNode[]): number => {
+    return nodes.reduce((count, node) => {
+      if (node.type === 'file') return count + 1;
+      if (node.children) return count + countFiles(node.children);
+      return count;
+    }, 0);
+  };
+
   return (
     <div className="file-explorer">
       <div className="explorer-header">
         <span>📁 ULTIMA FILE SYSTEM</span>
-        <button onClick={loadFileTree} className="refresh-btn">🔄</button>
+        <div>
+          <span className="file-count">{countFiles(fileTree)} files</span>
+          <button onClick={loadFileTree} className="refresh-btn">🔄</button>
+        </div>
       </div>
       <div className="file-tree">
         {fileTree.map(node => renderNode(node))}
@@ -110,8 +160,10 @@ const FileExplorer: React.FC = () => {
           border: 1px solid #440000;
           border-radius: 6px;
           margin: 10px;
-          height: calc(100vh - 120px);
+          height: 100%;
           overflow-y: auto;
+          display: flex;
+          flex-direction: column;
         }
         
         .explorer-header {
@@ -123,6 +175,12 @@ const FileExplorer: React.FC = () => {
           align-items: center;
           font-size: 12px;
           font-weight: bold;
+        }
+        
+        .file-count {
+          color: #ff8888;
+          font-size: 10px;
+          margin-right: 8px;
         }
         
         .refresh-btn {
@@ -137,6 +195,8 @@ const FileExplorer: React.FC = () => {
           padding: 8px;
           font-family: 'Fira Code', monospace;
           font-size: 12px;
+          flex: 1;
+          overflow-y: auto;
         }
         
         .file-item {
