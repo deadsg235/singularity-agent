@@ -17,22 +17,10 @@ const FileExplorer: React.FC = () => {
     
     // Listen for file creation events
     const handleFileCreated = (event: any) => {
-      const newFile = event.detail;
-      setFileTree(prevTree => {
-        const updatedTree = [...prevTree];
-        
-        // Find the correct folder to add the file
-        const targetFolder = findFolder(updatedTree, newFile.path.split('/').slice(0, -1).join('/'));
-        if (targetFolder && targetFolder.children) {
-          // Check if file already exists
-          const exists = targetFolder.children.some(child => child.name === newFile.name);
-          if (!exists) {
-            targetFolder.children.push(newFile);
-          }
-        }
-        
-        return updatedTree;
-      });
+      // Refresh entire file tree from server
+      setTimeout(() => {
+        loadFileTree();
+      }, 500);
     };
     
     window.addEventListener('fileCreated', handleFileCreated);
@@ -41,10 +29,11 @@ const FileExplorer: React.FC = () => {
 
   const loadFileTree = async () => {
     try {
-      const response = await fetch('/api/files');
+      const response = await fetch('/api/files?t=' + Date.now());
       const data = await response.json();
       setFileTree(data.files || getDefaultTree());
-    } catch {
+    } catch (error) {
+      console.error('Failed to load file tree:', error);
       setFileTree(getDefaultTree());
     }
   };
