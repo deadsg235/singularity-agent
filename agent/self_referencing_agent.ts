@@ -186,7 +186,7 @@ class SingularityAgent {
     let response = llm_response.content;
     
     if (llm_response.tool_calls?.length > 0) {
-      response += `\n\nTool Executions: ${llm_response.tool_calls.map(t => t.name).join(', ')}`;
+      response += `\n\nTool Executions: ${llm_response.tool_calls.map((t: any) => t.name).join(', ')}`;
     }
     
     response += `\n\nReasoning Depth: ${reasoning.final_reasoning?.length || 0} layers`;
