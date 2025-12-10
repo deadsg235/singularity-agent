@@ -98,7 +98,7 @@ const ChatInterface: React.FC = () => {
         {isProcessing && (
           <div className="message agent processing">
             <div className="message-header">
-              <span className="sender">> ULTIMA</span>
+              <span className="sender">&gt; ULTIMA</span>
               <span className="status">PROCESSING...</span>
             </div>
             <div className="message-content">
