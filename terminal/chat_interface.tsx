@@ -72,9 +72,14 @@ const ChatInterface: React.FC = () => {
         <span className="status">● ONLINE</span>
       </div>
       
-      <div className="messages-container">
-        <FileExplorer />
-        {messages.map((message) => (
+      <div className="main-content">
+        <div className="sidebar">
+          <FileExplorer />
+        </div>
+        
+        <div className="chat-area">
+          <div className="messages-container">
+            {messages.map((message) => (
           <div key={message.id} className={`message ${message.type}`}>
             <div className="message-header">
               <span className="sender">
@@ -110,10 +115,10 @@ const ChatInterface: React.FC = () => {
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
-      </div>
+            <div ref={messagesEndRef} />
+          </div>
 
-      <div className="input-container">
+          <div className="input-container">
         <input
           type="text"
           value={input}
@@ -129,7 +134,9 @@ const ChatInterface: React.FC = () => {
           className="send-btn"
         >
           SEND
-        </button>
+          </button>
+          </div>
+        </div>
       </div>
 
       <style jsx>{`
@@ -142,6 +149,25 @@ const ChatInterface: React.FC = () => {
           flex-direction: column;
           position: relative;
           overflow: hidden;
+        }
+        
+        .main-content {
+          display: flex;
+          flex: 1;
+        }
+        
+        .sidebar {
+          width: 300px;
+          background: rgba(10, 0, 0, 0.8);
+          border-right: 2px solid #440000;
+          position: relative;
+          z-index: 3;
+        }
+        
+        .chat-area {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
         }
         
         .terminal-container::before {
@@ -205,8 +231,6 @@ const ChatInterface: React.FC = () => {
           position: relative;
           z-index: 3;
           backdrop-filter: blur(0.5px);
-          display: flex;
-          flex-direction: column;
         }
         
         .messages-container::-webkit-scrollbar {
