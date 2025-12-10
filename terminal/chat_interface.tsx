@@ -162,6 +162,8 @@ const ChatInterface: React.FC = () => {
           border-right: 2px solid #440000;
           position: relative;
           z-index: 3;
+          overflow-y: auto;
+          flex-shrink: 0;
         }
         
         .chat-area {
@@ -231,6 +233,7 @@ const ChatInterface: React.FC = () => {
           position: relative;
           z-index: 3;
           backdrop-filter: blur(0.5px);
+          min-height: 0;
         }
         
         .messages-container::-webkit-scrollbar {

@@ -109,8 +109,8 @@ const FileExplorer: React.FC = () => {
           background: rgba(17, 0, 0, 0.4);
           border: 1px solid #440000;
           border-radius: 6px;
-          margin: 10px 0;
-          max-height: 300px;
+          margin: 10px;
+          height: calc(100vh - 120px);
           overflow-y: auto;
         }
         
