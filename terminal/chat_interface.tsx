@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import FileExplorer from './file_explorer';
 
 interface Message {
   id: string;
@@ -72,6 +73,7 @@ const ChatInterface: React.FC = () => {
       </div>
       
       <div className="messages-container">
+        <FileExplorer />
         {messages.map((message) => (
           <div key={message.id} className={`message ${message.type}`}>
             <div className="message-header">
@@ -203,6 +205,8 @@ const ChatInterface: React.FC = () => {
           position: relative;
           z-index: 3;
           backdrop-filter: blur(0.5px);
+          display: flex;
+          flex-direction: column;
         }
         
         .messages-container::-webkit-scrollbar {
