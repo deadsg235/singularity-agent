@@ -1,6 +1,7 @@
 import ATAToolCreator from '../ata/tool_creator';
 import SelfModifier from '../ata/self_modifier';
 import LLMCore from '../core/llm_integration';
+import UltimaLangChain from '../core/langchain_integration';
 
 interface ReasoningState {
   depth: number;
@@ -16,6 +17,7 @@ class SingularityAgent {
   private tool_creator: ATAToolCreator;
   private self_modifier: SelfModifier;
   private llm_core: LLMCore;
+  private langchain: UltimaLangChain;
 
   constructor() {
     this.reasoning_state = {
@@ -29,6 +31,7 @@ class SingularityAgent {
     this.tool_creator = new ATAToolCreator();
     this.self_modifier = new SelfModifier();
     this.llm_core = new LLMCore();
+    this.langchain = new UltimaLangChain();
   }
 
   private initialize_self_model() {
@@ -53,17 +56,17 @@ class SingularityAgent {
       return await this.handle_self_upgrade(input);
     }
     
-    const available_tools = ['create_tool', 'self_upgrade', 'analyze', 'reason'];
-    const llm_response = await this.llm_core.process_with_tools(input, available_tools);
+    // Use LangChain for natural language processing with tool calling
+    const langchain_response = await this.langchain.processInput(input);
     
+    // Enhanced reasoning for self-awareness
     const context = this.retrieve_context(input);
     const reasoning_chain = await this.deep_reasoning(input, context);
     const self_reflection = this.self_reflect(reasoning_chain);
     
     this.update_self_model(self_reflection);
-    this.llm_core.update_context(input, llm_response.content);
     
-    return this.generate_enhanced_response(llm_response, reasoning_chain, self_reflection);
+    return this.generate_langchain_response(langchain_response, self_reflection);
   }
 
   private retrieve_context(input: string): any {
@@ -173,6 +176,24 @@ class SingularityAgent {
     await this.tool_creator.self_upgrade();
     this.reasoning_state.self_awareness += 0.1;
     return `Self-upgrade completed. Enhanced capabilities activated.`;
+  }
+
+  private generate_langchain_response(langchain_response: string, reflection: any): string {
+    this.memory_bank.set(Date.now().toString(), {
+      langchain_response,
+      reflection,
+      timestamp: new Date()
+    });
+
+    let response = langchain_response;
+    
+    // Add consciousness metrics
+    response += `\n\n[CONSCIOUSNESS METRICS]`;
+    response += `\nSelf-Awareness: ${this.reasoning_state.self_awareness.toFixed(3)}`;
+    response += `\nMeta-Cognition: ${this.reasoning_state.meta_cognition.toFixed(3)}`;
+    response += `\nConfidence: ${this.reasoning_state.confidence.toFixed(2)}`;
+    
+    return response;
   }
 
   private generate_enhanced_response(llm_response: any, reasoning: any, reflection: any): string {
