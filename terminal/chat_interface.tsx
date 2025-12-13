@@ -68,7 +68,7 @@ const ChatInterface: React.FC = () => {
   return (
     <div className="terminal-container">
       <div className="terminal-header">
-        <span>ULTIMA v1.0</span>
+        <a href="https://ultima-singularity-agent-v1.vercel.app/" target="_blank" rel="noopener noreferrer" className="ultima-link">ULTIMA v1.0</a>
         <span className="status">● ONLINE</span>
       </div>
       
@@ -222,6 +222,16 @@ const ChatInterface: React.FC = () => {
         .status {
           color: #ff6666;
           animation: pulse-glow 2s ease-in-out infinite alternate;
+        }
+
+        .ultima-link {
+          color: #ff4444; /* Ensure it's red */
+          text-decoration: none; /* Remove underline */
+          transition: color 0.3s ease;
+        }
+
+        .ultima-link:hover {
+          color: #ff6666; /* Slightly lighter red on hover for interactivity */
         }
         
         @keyframes pulse-glow {
