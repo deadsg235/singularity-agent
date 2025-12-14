@@ -93,7 +93,8 @@ class UltimaLangChain {
       
       return response;
     } catch (error) {
-      return `ULTIMA: I encountered an issue processing your request. Error: ${error}`;
+      console.error('Error processing input in UltimaLangChain:', error);
+      throw error;
     }
   }
 
