@@ -128,25 +128,38 @@ class UltimaNeuralInterface {
     }
 
     async sendToUltima(message) {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: message,
-                history: this.chatHistory,
-                user_id: this.userId
-            })
-        });
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: message,
+                    history: this.chatHistory,
+                    user_id: this.userId
+                })
+            });
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Neural link failure');
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}`);
+            }
 
-        this.chatHistory.push(
-            { role: 'user', parts: message },
-            { role: 'model', parts: data.response }
-        );
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Neural link failure');
 
-        return data.response;
+            this.chatHistory.push(
+                { role: 'user', parts: message },
+                { role: 'model', parts: data.response }
+            );
+
+            return data.response;
+        } catch (error) {
+            if (error.message.includes('JSON')) {
+                throw new Error('API endpoint not found or returning HTML');
+            }
+            throw error;
+        }
     }
 
     addMessage(type, content) {

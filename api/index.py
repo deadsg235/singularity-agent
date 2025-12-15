@@ -12,7 +12,7 @@ import token_module
 from ml_core.deep_q_tool_generator import DeepQToolGenerator
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=['*'], methods=['GET', 'POST', 'OPTIONS'], allow_headers=['Content-Type'])
 
 # Load environment variables
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")
@@ -87,7 +87,9 @@ def chat():
         {"agent_response": response_text[:100]}
     )
 
-    return jsonify({"response": response_text})
+    response = jsonify({"response": response_text})
+    response.headers['Content-Type'] = 'application/json'
+    return response
 
 @app.route('/api/token/balance', methods=['GET'])
 def get_token_balance():
