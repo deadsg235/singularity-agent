@@ -2,9 +2,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
+import sys
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from agent_web import UltimaWebAgent, DEFAULT_WEB_SYSTEM_PROMPT
-import token_module # Import the token module
-from ml_core.deep_q_tool_generator import DeepQToolGenerator # Import the tool generator
+import token_module
+from ml_core.deep_q_tool_generator import DeepQToolGenerator
 
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins, adjust in production
@@ -238,13 +243,21 @@ def get_prompt():
     return jsonify({"system_prompt": ULTIMA_AGENT_SYSTEM_PROMPT})
 
 
-@app.route('/api/hello', methods=['GET'])
-def hello():
-    return jsonify({"message": "Hello from Ultima Web Agent API!"})
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "service": "Ultima AI Terminal",
+        "version": "2.0.0",
+        "ai_model": "Gemini Pro"
+    })
 
 @app.route('/', methods=['GET'])
 def api_root():
-    return jsonify({"message": "Hello from Ultima Agent API Root!"})
+    return jsonify({"message": "Ultima AI Terminal API - Ready for interaction"})
+
+# Export the app for Vercel
+app = app
 
 if __name__ == '__main__':
     # This block is for local testing purposes only. Vercel will run the app differently.

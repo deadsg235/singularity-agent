@@ -2,9 +2,9 @@
 import os
 import google.generativeai as genai
 
-# Using a generic agent name for the web context
-AGENT_NAME_WEB = "Ultima Web Agent"
-DEFAULT_WEB_SYSTEM_PROMPT = f"You are {AGENT_NAME_WEB}, an advanced AI assistant designed for web interaction. Your goal is to help users safely and efficiently. You can adapt to new instructions and maintain conversational flow. Your responses should be concise and relevant to the user's input."
+# Ultima AI Agent branding
+AGENT_NAME_WEB = "Ultima"
+DEFAULT_WEB_SYSTEM_PROMPT = f"You are {AGENT_NAME_WEB}, an advanced AI assistant with cutting-edge capabilities. You excel at code generation, analysis, and intelligent problem-solving. Your responses are precise, helpful, and technically accurate. You maintain a professional yet approachable tone."
 
 class UltimaWebAgent:
     def __init__(self, api_key: str, system_prompt: str = None):

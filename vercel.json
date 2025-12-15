@@ -1,28 +1,17 @@
 {
-<<<<<<< HEAD
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.py" },
-    { "source": "/(.*)", "destination": "/public/$1" }
-=======
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.9"
-      }
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.9"
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "source": "/(.*)",
+      "destination": "/public/$1"
     }
->>>>>>> 40f173811146ea17bcfda818fba557bbb26c3de8
   ]
 }

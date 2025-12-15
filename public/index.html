@@ -3,53 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultima Web Agent</title>
+    <title>Ultima AI Terminal</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>Ultima Web Agent</h1>
-            <div class="controls">
-                <button id="viewPromptBtn" class="control-btn">View Prompt</button>
-                <button id="suggestPromptBtn" class="control-btn">Suggest New Prompt</button>
-                <button id="readCodeBtn" class="control-btn">Read Code File</button>
-                <button id="suggestCodeChangeBtn" class="control-btn">Suggest Code Change</button>
-                <button id="checkBalanceBtn" class="control-btn">Check Balance</button>
-                <button id="projectFilesBtn" class="control-btn">Project Files</button>
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <div class="terminal-controls">
+                <span class="control-dot red"></span>
+                <span class="control-dot yellow"></span>
+                <span class="control-dot green"></span>
+            </div>
+            <div class="terminal-title">
+                <span class="ultima-brand">ULTIMA</span>
+                <span class="terminal-subtitle">AI Terminal v2.0</span>
+            </div>
+            <div class="terminal-actions">
+                <button class="action-btn" id="clearBtn" title="Clear Terminal">⌘K</button>
+                <button class="action-btn" id="toolsBtn" title="Tools">⚡</button>
+                <button class="action-btn" id="statusBtn" title="Status">●</button>
             </div>
         </div>
-        <div class="chat-box" id="chatBox">
-            <div class="message agent-message">
-                <p><strong>Agent:</strong> Hello! I am the Ultima Web Agent. How can I assist you today?</p>
+        
+        <div class="terminal-body" id="terminal">
+            <div class="boot-sequence">
+                <div class="boot-line">Initializing Ultima AI Terminal...</div>
+                <div class="boot-line">Loading neural networks... ✓</div>
+                <div class="boot-line">Establishing secure connection... ✓</div>
+                <div class="boot-line">Ready for interaction.</div>
+                <div class="welcome-message">
+                    <span class="prompt-symbol">ultima@terminal:~$</span> 
+                    <span class="welcome-text">Welcome to Ultima AI. Type 'help' for commands or start chatting.</span>
+                </div>
             </div>
         </div>
-        <div class="chat-input-container">
-            <input type="text" id="userInput" placeholder="Type your message...">
-            <button id="sendBtn">Send</button>
+        
+        <div class="terminal-input-container">
+            <span class="input-prompt">ultima@terminal:~$</span>
+            <input type="text" id="commandInput" class="terminal-input" placeholder="Enter command or message..." autocomplete="off">
+            <button id="sendBtn" class="send-btn">↵</button>
+        </div>
+    </div>
+
+    <!-- Tools Modal -->
+    <div id="toolsModal" class="modal">
+        <div class="modal-content terminal-style">
+            <div class="modal-header">
+                <h3>⚡ Ultima Tools</h3>
+                <span class="close-btn" id="closeTools">&times;</span>
+            </div>
+            <div class="tools-grid">
+                <button class="tool-btn" data-tool="code-read">📄 Read Code</button>
+                <button class="tool-btn" data-tool="code-suggest">🔧 Suggest Changes</button>
+                <button class="tool-btn" data-tool="tool-generate">⚙️ Generate Tool</button>
+                <button class="tool-btn" data-tool="prompt-view">👁️ View Prompt</button>
+                <button class="tool-btn" data-tool="prompt-suggest">💡 Suggest Prompt</button>
+                <button class="tool-btn" data-tool="balance">💰 Token Balance</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Modal -->
+    <div id="statusModal" class="modal">
+        <div class="modal-content terminal-style">
+            <div class="modal-header">
+                <h3>● System Status</h3>
+                <span class="close-btn" id="closeStatus">&times;</span>
+            </div>
+            <div class="status-info">
+                <div class="status-item">
+                    <span class="status-label">Connection:</span>
+                    <span class="status-value" id="connectionStatus">Connected</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Tokens:</span>
+                    <span class="status-value" id="tokenBalance">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Model:</span>
+                    <span class="status-value">Gemini Pro</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Uptime:</span>
+                    <span class="status-value" id="uptime">00:00:00</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="script.js"></script>
-
-    <div id="projectFilesModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Project Files & Configuration</h2>
-            <div class="modal-section">
-                <h3>Current System Prompt:</h3>
-                <p id="modalSystemPrompt"></p>
-            </div>
-            <div class="modal-section">
-                <h3>Key Project Files:</h3>
-                <ul id="projectFilesList">
-                    <!-- Files will be populated by JavaScript -->
-                </ul>
-            </div>
-            <div class="modal-section">
-                <button id="suggestToolBtn" class="control-btn">Suggest New Tool</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
