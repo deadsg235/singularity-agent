@@ -38,8 +38,8 @@ def call_groq(messages, max_tokens=1024):
         return "Error: GROQ_API_KEY not configured"
     
     try:
-        import groq
-        client = groq.Groq(api_key=GROQ_API_KEY)
+        from groq import Groq
+        client = Groq(api_key=GROQ_API_KEY)
         
         response = client.chat.completions.create(
             model=GROQ_MODEL,
