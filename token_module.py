@@ -10,10 +10,11 @@ _user_balances = {
 }
 _transactions = [] # List to store simulated transactions
 
-TOKEN_COST_PER_CHAT_MESSAGE = 10 # Example cost
-TOKEN_COST_PER_PROMPT_SUGGESTION = 50
-TOKEN_COST_PER_CODE_SUGGESTION = 100
-TOKEN_COST_PER_TOOL_SUGGESTION = 150
+# Ultima Token Costs
+TOKEN_COST_PER_CHAT_MESSAGE = 5
+TOKEN_COST_PER_PROMPT_SUGGESTION = 25
+TOKEN_COST_PER_CODE_SUGGESTION = 50
+TOKEN_COST_PER_TOOL_SUGGESTION = 75
 
 def get_balance(user_id: str = "default_user") -> int:
     """Retrieves the simulated token balance for a given user."""
@@ -52,5 +53,23 @@ def get_transaction_history(user_id: str = "default_user") -> list:
     """Retrieves simulated transaction history for a user."""
     return [tx for tx in _transactions if tx["user_id"] == user_id]
 
+def add_tokens(user_id: str, amount: int) -> bool:
+    """Add Ultima tokens to user balance."""
+    if user_id not in _user_balances:
+        _user_balances[user_id] = 0
+    _user_balances[user_id] += amount
+    return True
+
+def get_token_price() -> dict:
+    """Get current Ultima token pricing."""
+    return {
+        "price_per_token": 0.001,  # $0.001 per token
+        "packages": {
+            "starter": {"tokens": 1000, "price": 0.99},
+            "pro": {"tokens": 5000, "price": 4.49},
+            "enterprise": {"tokens": 25000, "price": 19.99}
+        }
+    }
+
 # Initial top-up transaction for default user
-record_transaction("default_user", "topup", _user_balances["default_user"], "Initial token allocation")
+record_transaction("default_user", "topup", _user_balances["default_user"], "Initial Ultima token allocation")

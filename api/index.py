@@ -32,7 +32,8 @@ def health_check():
         "status": "healthy",
         "service": "Ultima AI Terminal",
         "version": "2.0.0",
-        "ai_model": "Gemini Pro"
+        "ai_model": "Gemini 1.5 Flash",
+        "token_system": "Ultima Tokens Active"
     })
 
 @app.route('/api/self', methods=['GET'])
@@ -250,6 +251,73 @@ def suggest_prompt():
     )
     
     return jsonify({"suggested_prompt": suggested_prompt})
+
+@app.route('/api/files', methods=['GET'])
+def list_files():
+    """List project files for the file explorer"""
+    try:
+        files = []
+        for root, dirs, filenames in os.walk(PROJECT_ROOT):
+            # Skip hidden directories and common build directories
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['__pycache__', 'node_modules', '.git']]
+            
+            rel_root = os.path.relpath(root, PROJECT_ROOT)
+            if rel_root == '.':
+                rel_root = ''
+            
+            for filename in filenames:
+                if not filename.startswith('.') and not filename.endswith('.pyc'):
+                    file_path = os.path.join(rel_root, filename) if rel_root else filename
+                    files.append({
+                        "name": filename,
+                        "path": file_path,
+                        "type": "file",
+                        "size": os.path.getsize(os.path.join(root, filename))
+                    })
+        
+        return jsonify({"files": files})
+    except Exception as e:
+        return jsonify({"error": f"Error listing files: {str(e)}"}), 500
+
+@app.route('/api/token/pricing', methods=['GET'])
+def get_token_pricing():
+    """Get Ultima token pricing information"""
+    pricing = token_module.get_token_price()
+    return jsonify(pricing)
+
+@app.route('/api/token/purchase', methods=['POST'])
+def purchase_tokens():
+    """Purchase Ultima tokens (simulation)"""
+    data = request.get_json()
+    user_id = data.get('user_id', 'default_user')
+    package = data.get('package', 'starter')
+    
+    pricing = token_module.get_token_price()
+    if package not in pricing['packages']:
+        return jsonify({"error": "Invalid package"}), 400
+    
+    package_info = pricing['packages'][package]
+    tokens_to_add = package_info['tokens']
+    
+    # Simulate successful payment
+    if token_module.add_tokens(user_id, tokens_to_add):
+        token_module.record_transaction(
+            user_id,
+            "purchase",
+            tokens_to_add,
+            f"Purchased {package} package",
+            {"package": package, "price": package_info['price']}
+        )
+        
+        new_balance = token_module.get_balance(user_id)
+        return jsonify({
+            "success": True,
+            "tokens_added": tokens_to_add,
+            "new_balance": new_balance,
+            "package": package
+        })
+    else:
+        return jsonify({"error": "Failed to add tokens"}), 500
 
 @app.route('/', methods=['GET'])
 def api_root():
