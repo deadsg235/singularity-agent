@@ -1,33 +1,18 @@
-import numpy as np
 import json
+import math
 from typing import List, Dict, Any
 
 class DeepQCognition:
     def __init__(self):
-        # 5-layer neural network weights (simplified)
-        self.layers = [
-            np.random.randn(512, 256) * 0.1,  # Input layer
-            np.random.randn(256, 128) * 0.1,  # Hidden 1
-            np.random.randn(128, 64) * 0.1,   # Hidden 2
-            np.random.randn(64, 32) * 0.1,    # Hidden 3
-            np.random.randn(32, 16) * 0.1     # Output layer
-        ]
         self.q_table = {}
         
-    def encode_state(self, text: str) -> np.ndarray:
-        """Convert text to neural state vector"""
-        # Simple hash-based encoding
-        hash_val = hash(text) % 512
-        state = np.zeros(512)
-        state[hash_val] = 1.0
-        return state
+    def encode_state(self, text: str) -> float:
+        """Convert text to neural state value"""
+        return hash(text) % 1000 / 1000.0
     
-    def forward_pass(self, state: np.ndarray) -> np.ndarray:
-        """5-layer forward propagation"""
-        x = state
-        for layer in self.layers:
-            x = np.tanh(np.dot(x, layer))
-        return x
+    def neural_activation(self, value: float) -> float:
+        """Simple neural activation function"""
+        return math.tanh(value * 2.0)
     
     def q_learning_step(self, state: str, action: str, reward: float):
         """Update Q-values for reasoning improvement"""
@@ -37,11 +22,11 @@ class DeepQCognition:
     
     def reason(self, query: str, context: List[str] = None) -> Dict[str, Any]:
         """Advanced reasoning with deep Q network"""
-        state_vector = self.encode_state(query)
-        neural_output = self.forward_pass(state_vector)
+        state_value = self.encode_state(query)
+        neural_output = self.neural_activation(state_value)
         
         # Q-value based decision making
-        confidence = float(np.mean(neural_output))
+        confidence = abs(neural_output)
         complexity = len(query.split())
         
         reasoning_steps = []
@@ -59,7 +44,7 @@ class DeepQCognition:
         return {
             "reasoning_steps": reasoning_steps,
             "confidence": confidence,
-            "neural_activation": neural_output.tolist()[:5],
+            "neural_activation": [neural_output, state_value, confidence],
             "q_value": self.q_table.get(f"{query[:50]}_reason", 0.0)
         }
 
