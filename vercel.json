@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/public/$1" }
+  ],
+  "builds": [
+    { "src": "api/index.py", "use": "@vercel/python" }
+  ],
+  "outputDirectory": "public"
+}
