@@ -11,7 +11,7 @@ class UltimaWebAgent:
         if not api_key:
             raise ValueError("API Key is required for UltimaWebAgent.")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-3-pro-preview')
         self._system_prompt = system_prompt if system_prompt else DEFAULT_WEB_SYSTEM_PROMPT
 
     def _initialize_chat_with_prompt(self):
