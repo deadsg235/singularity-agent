@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewPromptBtn = document.getElementById('viewPromptBtn');
     const suggestPromptBtn = document.getElementById('suggestPromptBtn');
     const readCodeBtn = document.getElementById('readCodeBtn');
+    const suggestCodeChangeBtn = document.getElementById('suggestCodeChangeBtn');
 
     let chatHistory = []; // Stores messages in the format expected by the backend
 
@@ -110,6 +111,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function suggestCodeChange() {
+        const filePath = prompt('Enter the path to the code file you want to change (e.g., api/index.py):');
+        if (!filePath) return;
+
+        const changeDescription = prompt('Describe the code change you want (e.g., "add logging to this function", "refactor this loop"):');
+        if (!changeDescription) return;
+
+        suggestCodeChangeBtn.disabled = true;
+        suggestCodeChangeBtn.textContent = 'Suggesting...';
+
+        try {
+            const response = await fetch('/api/code/suggest_change', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ file_path: filePath, change_description: changeDescription })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert(`Suggested change for ${data.file_path}:\n\n${data.suggested_code}\n\n(Remember: This is a suggestion for manual review and application.)`);
+            } else {
+                alert(`Error suggesting code change: ${data.error || 'Something went wrong.'}`);
+            }
+        } catch (error) {
+            console.error('Error suggesting code change:', error);
+            alert('Error connecting to the API to suggest code change.');
+        } finally {
+            suggestCodeChangeBtn.disabled = false;
+            suggestCodeChangeBtn.textContent = 'Suggest Code Change';
+        }
+    }
+
     sendBtn.addEventListener('click', sendMessage);
     userInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -119,4 +154,5 @@ document.addEventListener('DOMContentLoaded', () => {
     viewPromptBtn.addEventListener('click', viewSystemPrompt);
     suggestPromptBtn.addEventListener('click', suggestNewPrompt);
     readCodeBtn.addEventListener('click', readCodeFile);
+    suggestCodeChangeBtn.addEventListener('click', suggestCodeChange);
 });
