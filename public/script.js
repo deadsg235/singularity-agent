@@ -6,8 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const suggestPromptBtn = document.getElementById('suggestPromptBtn');
     const readCodeBtn = document.getElementById('readCodeBtn');
     const suggestCodeChangeBtn = document.getElementById('suggestCodeChangeBtn');
+    const checkBalanceBtn = document.getElementById('checkBalanceBtn');
 
     let chatHistory = []; // Stores messages in the format expected by the backend
+    const USER_ID = 'default_user'; // Hardcoded user ID for demo purposes
 
     function appendMessage(sender, message) {
         const messageElement = document.createElement('div');
@@ -37,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message: message, history: chatHistory })
+                body: JSON.stringify({ message: message, history: chatHistory, user_id: USER_ID })
             });
 
             const data = await response.json();
@@ -72,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         suggestPromptBtn.disabled = true; // Prevent multiple clicks
         suggestPromptBtn.textContent = 'Suggesting...';
         try {
-            const response = await fetch('/api/prompt/suggest');
+            const response = await fetch(`/api/prompt/suggest?user_id=${USER_ID}`);
             const data = await response.json();
             if (response.ok) {
                 const suggestedPrompt = data.suggested_prompt;
@@ -127,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ file_path: filePath, change_description: changeDescription })
+                body: JSON.stringify({ file_path: filePath, change_description: changeDescription, user_id: USER_ID })
             });
 
             const data = await response.json();
@@ -145,6 +147,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function checkTokenBalance() {
+        try {
+            const response = await fetch(`/api/token/balance?user_id=${USER_ID}`);
+            const data = await response.json();
+            if (response.ok) {
+                alert(`Your current Ultima Token balance: ${data.balance}`);
+            } else {
+                alert(`Error checking balance: ${data.error || 'Something went wrong.'}`);
+            }
+        } catch (error) {
+            console.error('Error checking token balance:', error);
+            alert('Error connecting to the API to check token balance.');
+        }
+    }
+
     sendBtn.addEventListener('click', sendMessage);
     userInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -155,4 +172,5 @@ document.addEventListener('DOMContentLoaded', () => {
     suggestPromptBtn.addEventListener('click', suggestNewPrompt);
     readCodeBtn.addEventListener('click', readCodeFile);
     suggestCodeChangeBtn.addEventListener('click', suggestCodeChange);
+    checkBalanceBtn.addEventListener('click', checkTokenBalance);
 });
