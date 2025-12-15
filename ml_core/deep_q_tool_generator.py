@@ -6,7 +6,7 @@ class DeepQToolGenerator:
         if not api_key:
             raise ValueError("API Key is required for DeepQToolGenerator.")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-3-pro-preview')
+        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
     def generate_tool_code(self, task_description: str) -> str:
         """

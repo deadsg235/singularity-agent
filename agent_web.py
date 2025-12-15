@@ -11,7 +11,7 @@ class UltimaWebAgent:
         if not api_key:
             raise ValueError("API Key is required for UltimaWebAgent.")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-3-pro-preview')
+        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
         self._system_prompt = system_prompt if system_prompt else DEFAULT_WEB_SYSTEM_PROMPT
 
     def _initialize_chat_with_prompt(self):
@@ -55,7 +55,7 @@ class UltimaWebAgent:
             "Provide only the new system prompt text, nothing else."
         )
         try:
-            temp_model = genai.GenerativeModel('gemini-3-pro-preview')
+            temp_model = genai.GenerativeModel('gemini-2.0-flash-exp')
             response = temp_model.generate_content(suggestion_prompt_text)
             return response.text.strip()
         except Exception as e:
@@ -72,7 +72,7 @@ class UltimaWebAgent:
             "Provide only the code suggestion, nothing else. If you provide a diff, start with `---`."
         )
         try:
-            temp_model = genai.GenerativeModel('gemini-3-pro-preview')
+            temp_model = genai.GenerativeModel('gemini-2.0-flash-exp')
             response = temp_model.generate_content(code_suggestion_prompt)
             return response.text.strip()
         except Exception as e:

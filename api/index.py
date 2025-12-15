@@ -32,7 +32,7 @@ def health_check():
         "status": "healthy",
         "service": "Ultima AI Terminal",
         "version": "2.0.0",
-        "ai_model": "Gemini 3 Pro Preview",
+        "ai_model": "Gemini 2.0 Flash Exp",
         "token_system": "Ultima Tokens Active"
     })
 

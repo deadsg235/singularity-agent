@@ -33,7 +33,7 @@ class UltimaAgent:
             raise ValueError("GEMINI_API_KEY environment variable not set.")
         genai.configure(api_key=self.api_key)
         
-        self.model = genai.GenerativeModel('gemini-2.5-pro')
+        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
         self.chat = self.model.start_chat(history=[])
         self.load_system_prompt()
 
@@ -72,7 +72,7 @@ class UltimaAgent:
         )
         try:
             # Create a temporary model just for this suggestion to avoid polluting main chat history
-            temp_model = genai.GenerativeModel('gemini-2.5-pro')
+            temp_model = genai.GenerativeModel('gemini-2.0-flash-exp')
             response = temp_model.generate_content(suggestion_prompt)
             return response.text.strip()
         except Exception as e:
