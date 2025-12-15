@@ -252,6 +252,14 @@ def health_check():
         "ai_model": "Gemini Pro"
     })
 
+@app.route('/api/self', methods=['GET'])
+def self_reference():
+    return jsonify({
+        "message": "I am Ultima, an advanced AI assistant with cutting-edge capabilities.",
+        "capabilities": ["code generation", "analysis", "tool creation", "intelligent problem-solving"],
+        "status": "ready"
+    })
+
 @app.route('/', methods=['GET'])
 def api_root():
     return jsonify({"message": "Ultima AI Terminal API - Ready for interaction"})
