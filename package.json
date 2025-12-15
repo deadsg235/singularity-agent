@@ -1,0 +1,14 @@
+{
+  "name": "ultima-ai-terminal",
+  "version": "1.0.0",
+  "description": "Self-referencing AI with DQN reasoning capabilities",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python app.py",
+    "build": "echo 'Build complete'",
+    "start": "python app.py"
+  },
+  "keywords": ["ai", "dqn", "self-referencing", "terminal", "ultima"],
+  "author": "Ultima AI",
+  "license": "MIT"
+}

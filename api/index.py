@@ -4,13 +4,9 @@ import os
 import json
 import time
 from datetime import datetime
+import sys
+sys.path.append('..')
 from dqn_core import dqn
-try:
-    from torch_dqn import ultima_dqn
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
-    ultima_dqn = None
 
 app = Flask(__name__)
 CORS(app)
@@ -51,15 +47,6 @@ class UltimaCore:
         }
         self.log_activity("tool_created", {"name": name})
         return True
-    
-    def upgrade_self(self, upgrade_data):
-        self.upgrades.append({
-            "timestamp": datetime.now().isoformat(),
-            "data": upgrade_data
-        })
-        self.version = f"1.{len(self.upgrades)}.0"
-        self.log_activity("self_upgrade", upgrade_data)
-        return True
 
 # Global Ultima instance
 ultima = UltimaCore()
@@ -69,29 +56,12 @@ def chat():
     data = request.json
     message = data.get('message', '')
     
-    # Log user interaction
     ultima.log_activity("user_message", {"message": message})
     
-    # DQN reasoning analysis (use PyTorch if available)
-    if TORCH_AVAILABLE and data.get('advanced_mode', False):
-        reasoning = ultima_dqn.get_reasoning_analysis(message)
-        learning_data = ultima_dqn.learn_from_text(message, "")
-        dqn_type = "PyTorch DQN"
-    else:
-        reasoning = dqn.get_reasoning_analysis(message)
-        learning_data = dqn.learn_from_interaction(message, "")
-        dqn_type = "Simple DQN"
+    reasoning = dqn.get_reasoning_analysis(message)
+    response = f"Ultima v{ultima.version}: {ultima.system_prompt} Analysis: {', '.join(reasoning['reasoning_steps'])}. Confidence: {reasoning['confidence']:.2f}"
     
-    # Enhanced response with DQN insights
-    response = f"Ultima v{ultima.version} [{dqn_type}]: {ultima.system_prompt} Analysis: {', '.join(reasoning['reasoning_steps'])}. Confidence: {reasoning['confidence']:.2f}"
-    
-    # Complete learning with actual response
-    if TORCH_AVAILABLE and data.get('advanced_mode', False):
-        learning_data = ultima_dqn.learn_from_text(message, response)
-    else:
-        learning_data = dqn.learn_from_interaction(message, response)
-    
-    # Log response and learning
+    learning_data = dqn.learn_from_interaction(message, response)
     ultima.log_activity("ai_response", {"response": response, "learning": learning_data})
     
     return jsonify({
@@ -141,7 +111,7 @@ def status():
 @app.route('/api/logs')
 def logs():
     return jsonify({
-        "logs": ultima.memory[-20:],  # Last 20 entries
+        "logs": ultima.memory[-20:],
         "total": len(ultima.memory)
     })
 
@@ -153,4 +123,4 @@ def tools():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
