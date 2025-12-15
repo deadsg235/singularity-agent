@@ -55,7 +55,7 @@ class UltimaWebAgent:
             "Provide only the new system prompt text, nothing else."
         )
         try:
-            temp_model = genai.GenerativeModel('gemini-1.5-flash')
+            temp_model = genai.GenerativeModel('gemini-3-pro-preview')
             response = temp_model.generate_content(suggestion_prompt_text)
             return response.text.strip()
         except Exception as e:
@@ -72,7 +72,7 @@ class UltimaWebAgent:
             "Provide only the code suggestion, nothing else. If you provide a diff, start with `---`."
         )
         try:
-            temp_model = genai.GenerativeModel('gemini-1.5-flash')
+            temp_model = genai.GenerativeModel('gemini-3-pro-preview')
             response = temp_model.generate_content(code_suggestion_prompt)
             return response.text.strip()
         except Exception as e:
