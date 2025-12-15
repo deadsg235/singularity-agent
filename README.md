@@ -1,12 +1,12 @@
 # Ultima AI Terminal
 
-A sleek, terminal-style AI assistant powered by Ollama with advanced tool generation capabilities.
+A sleek, terminal-style AI assistant powered by Groq with LangChain for lightning-fast AI responses.
 
 ## ✨ Features
 
 - **Terminal Interface**: Sleek, hacker-style terminal UI with real-time interaction
 - **Ultima AI**: Advanced AI assistant with code generation and analysis
-- **Free LLM**: Powered by Ollama - no API keys required
+- **Lightning Fast**: Powered by Groq - fastest inference available
 - **Tool Generation**: AI-powered Python tool creation from natural language
 - **Code Analysis**: Read, analyze, and suggest improvements to code files
 - **Smart Commands**: Built-in terminal commands and AI chat integration
@@ -16,7 +16,7 @@ A sleek, terminal-style AI assistant powered by Ollama with advanced tool genera
 ## 🚀 Tech Stack
 
 - **Backend**: Flask (Python) + Serverless Functions
-- **AI Model**: Ollama (llama3.2, codellama, etc.)
+- **AI Model**: Groq (llama3-8b-8192, mixtral-8x7b, etc.)
 - **LLM Framework**: LangChain
 - **Frontend**: Vanilla JS + Terminal CSS
 - **Deployment**: Vercel
@@ -24,22 +24,11 @@ A sleek, terminal-style AI assistant powered by Ollama with advanced tool genera
 
 ## 🔧 Setup Requirements
 
-### 1. Install Ollama
-```bash
-# Install Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# Pull a model (e.g., llama3.2)
-ollama pull llama3.2
-
-# Start Ollama server
-ollama serve
-```
-
-### 2. Environment Setup
+### Environment Setup
 Set in Vercel dashboard or `.env.local`:
 ```bash
-OLLAMA_MODEL=llama3.2
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL=llama3-8b-8192
 ULTIMA_AGENT_SYSTEM_PROMPT=optional_custom_prompt
 ```
 
@@ -49,8 +38,8 @@ ULTIMA_AGENT_SYSTEM_PROMPT=optional_custom_prompt
 # Install dependencies
 pip install -r requirements.txt
 
-# Ensure Ollama is running
-ollama serve
+# Set environment variables
+export GROQ_API_KEY=your_groq_api_key
 
 # Run development server
 python api/index.py
@@ -68,7 +57,7 @@ npm i -g vercel
 # Deploy
 vercel --prod
 
-# Set environment variables in Vercel dashboard
+# Set GROQ_API_KEY in Vercel dashboard
 ```
 
 ## 🎯 Terminal Commands
@@ -105,7 +94,7 @@ ultima-terminal/
 │   ├── index.html            # Terminal interface
 │   ├── script.js             # Terminal logic
 │   └── style.css             # Terminal styling
-├── agent_web.py              # Ultima AI agent (Ollama)
+├── agent_web.py              # Ultima AI agent (Groq)
 ├── token_module.py           # Token management
 ├── requirements.txt          # Dependencies
 ├── vercel.json              # Vercel config
@@ -136,20 +125,19 @@ ultima-terminal/
 - Prompt suggestions: 25 tokens
 - Starting balance: 1000 tokens
 
-## 🆓 Free LLM Benefits
+## ⚡ Groq Benefits
 
-- **No API costs** - Run completely free with Ollama
-- **Privacy** - All processing happens locally
-- **Customizable** - Use any Ollama-supported model
-- **Offline capable** - Works without internet (after model download)
+- **Lightning Fast** - Fastest LLM inference available
+- **High Quality** - State-of-the-art models (Llama3, Mixtral)
+- **Generous Free Tier** - Substantial free usage limits
+- **Reliable** - Enterprise-grade infrastructure
 
 ## 🚀 Quick Start
 
-1. **Install Ollama**
+1. **Get Groq API Key**
    ```bash
-   curl -fsSL https://ollama.ai/install.sh | sh
-   ollama pull llama3.2
-   ollama serve
+   # Sign up at https://console.groq.com
+   # Get your free API key
    ```
 
 2. **Clone & Setup**
@@ -159,12 +147,17 @@ ultima-terminal/
    pip install -r requirements.txt
    ```
 
-3. **Deploy**
+3. **Configure**
+   ```bash
+   export GROQ_API_KEY=your_groq_api_key
+   ```
+
+4. **Deploy**
    ```bash
    vercel --prod
    ```
 
-4. **Use Terminal**
+5. **Use Terminal**
    - Open your Vercel URL
    - Type `help` for commands
    - Chat with Ultima AI
@@ -172,11 +165,11 @@ ultima-terminal/
 
 ## 🤖 Supported Models
 
-- **llama3.2** - General purpose (recommended)
-- **codellama** - Code-focused
-- **mistral** - Fast and efficient
-- **phi3** - Lightweight option
+- **llama3-8b-8192** - Fast and efficient (recommended)
+- **llama3-70b-8192** - Most capable
+- **mixtral-8x7b-32768** - Large context window
+- **gemma-7b-it** - Lightweight option
 
 ## 📝 License
 
-MIT License - Build amazing AI terminals for free!
+MIT License - Build amazing AI terminals with lightning speed!
