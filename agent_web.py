@@ -13,7 +13,9 @@ class UltimaWebAgent:
         if not groq_api_key:
             raise ValueError("GROQ_API_KEY environment variable not set.")
         
-        self.client = Groq(api_key=groq_api_key)
+        # Initialize with minimal parameters
+        import groq
+        self.client = groq.Groq(api_key=groq_api_key)
         self._system_prompt = system_prompt if system_prompt else DEFAULT_WEB_SYSTEM_PROMPT
         
     def get_system_prompt(self) -> str:

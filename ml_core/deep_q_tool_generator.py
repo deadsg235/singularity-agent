@@ -9,7 +9,8 @@ class DeepQToolGenerator:
         if not groq_api_key:
             raise ValueError("GROQ_API_KEY environment variable not set.")
         
-        self.client = Groq(api_key=groq_api_key)
+        import groq
+        self.client = groq.Groq(api_key=groq_api_key)
 
     def generate_tool_code(self, task_description: str) -> str:
         """
