@@ -242,6 +242,10 @@ def get_prompt():
 def hello():
     return jsonify({"message": "Hello from Ultima Web Agent API!"})
 
+@app.route('/', methods=['GET'])
+def api_root():
+    return jsonify({"message": "Hello from Ultima Agent API Root!"})
+
 if __name__ == '__main__':
     # This block is for local testing purposes only. Vercel will run the app differently.
     app.run(debug=True, port=5000)
