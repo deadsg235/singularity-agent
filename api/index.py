@@ -12,7 +12,7 @@ import token_module
 from ml_core.deep_q_tool_generator import DeepQToolGenerator
 
 app = Flask(__name__)
-CORS(app) # Enable CORS for all origins, adjust in production
+CORS(app)
 
 # Load environment variables
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -23,9 +23,76 @@ if not GEMINI_API_KEY:
 ULTIMA_AGENT_SYSTEM_PROMPT = os.getenv("ULTIMA_AGENT_SYSTEM_PROMPT", DEFAULT_WEB_SYSTEM_PROMPT)
 
 # Define project root for secure file access
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) # This is 'api' directory
-# Go up one level to get to the main project root
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(PROJECT_ROOT)
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "service": "Ultima AI Terminal",
+        "version": "2.0.0",
+        "ai_model": "Gemini Pro"
+    })
+
+@app.route('/api/self', methods=['GET'])
+def self_reference():
+    return jsonify({
+        "message": "I am Ultima, an advanced AI assistant with cutting-edge capabilities.",
+        "capabilities": ["code generation", "analysis", "tool creation", "intelligent problem-solving"],
+        "status": "ready"
+    })
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    if not GEMINI_API_KEY:
+        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
+
+    data = request.get_json()
+    user_message = data.get('message')
+    chat_history = data.get('history', [])
+    user_id = data.get('user_id', 'default_user')
+
+    if not user_message:
+        return jsonify({"error": "No message provided"}), 400
+
+    cost = token_module.TOKEN_COST_PER_CHAT_MESSAGE
+    if token_module.get_balance(user_id) < cost:
+        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
+
+    if not token_module.deduct_tokens(user_id, cost):
+        return jsonify({"error": "Failed to deduct tokens."}), 500
+    
+    token_module.record_transaction(
+        user_id,
+        "deduction",
+        cost,
+        "Chat message processing",
+        {"user_message": user_message[:100]}
+    )
+
+    agent = UltimaWebAgent(api_key=GEMINI_API_KEY, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
+    response_text = agent.send_message(user_message, chat_history)
+
+    token_module.record_transaction(
+        user_id,
+        "response_generated",
+        0,
+        "Agent response generated",
+        {"agent_response": response_text[:100]}
+    )
+
+    return jsonify({"response": response_text})
+
+@app.route('/api/token/balance', methods=['GET'])
+def get_token_balance():
+    user_id = request.args.get('user_id', 'default_user')
+    balance = token_module.get_balance(user_id)
+    return jsonify({"user_id": user_id, "balance": balance})
+
+@app.route('/api/prompt/get', methods=['GET'])
+def get_prompt():
+    return jsonify({"system_prompt": ULTIMA_AGENT_SYSTEM_PROMPT})
 
 @app.route('/api/tool/suggest', methods=['POST'])
 def suggest_tool():
@@ -63,7 +130,7 @@ def suggest_tool():
     token_module.record_transaction(
         user_id,
         "response_generated",
-        0, # Cost already covered
+        0,
         "Suggested tool code generated",
         {"suggested_tool_code_start": suggested_tool_code[:100]}
     )
@@ -76,10 +143,8 @@ def read_code():
     if not file_path_param:
         return jsonify({"error": "file_path parameter is required"}), 400
 
-    # Sanitize path to prevent directory traversal
     absolute_file_path = os.path.abspath(os.path.join(PROJECT_ROOT, file_path_param))
 
-    # Ensure the file is within the project root
     if not absolute_file_path.startswith(PROJECT_ROOT):
         return jsonify({"error": "Access denied: File outside project root"}), 403
 
@@ -93,95 +158,13 @@ def read_code():
     except Exception as e:
         return jsonify({"error": f"Error reading file: {str(e)}"}), 500
 
-@app.route('/api/chat', methods=['POST'])
-def chat():
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
-
-    data = request.get_json()
-    user_message = data.get('message')
-    chat_history = data.get('history', []) # Expect history from frontend
-    user_id = data.get('user_id', 'default_user') # For token system
-
-    if not user_message:
-        return jsonify({"error": "No message provided"}), 400
-
-    # Simulate token deduction for chat message
-    cost = token_module.TOKEN_COST_PER_CHAT_MESSAGE
-    if token_module.get_balance(user_id) < cost:
-        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402 # 402 Payment Required
-
-    if not token_module.deduct_tokens(user_id, cost):
-        return jsonify({"error": "Failed to deduct tokens."}), 500
-    
-    # Record token deduction transaction
-    token_module.record_transaction(
-        user_id,
-        "deduction",
-        cost,
-        "Chat message processing",
-        {"user_message": user_message[:100]} # Limit data for logging
-    )
-
-    agent = UltimaWebAgent(api_key=GEMINI_API_KEY, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
-    
-    response_text = agent.send_message(user_message, chat_history)
-
-    # Record response transaction
-    token_module.record_transaction(
-        user_id,
-        "response_generated",
-        0, # No additional cost for response generation itself, covered by message cost
-        "Agent response generated",
-        {"agent_response": response_text[:100]} # Limit data for logging
-    )
-
-    return jsonify({"response": response_text})
-
-@app.route('/api/prompt/suggest', methods=['GET'])
-def suggest_prompt():
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
-
-    user_id = request.args.get('user_id', 'default_user') # Assuming user_id can be passed, else default
-    cost = token_module.TOKEN_COST_PER_PROMPT_SUGGESTION
-
-    if token_module.get_balance(user_id) < cost:
-        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
-    
-    if not token_module.deduct_tokens(user_id, cost):
-        return jsonify({"error": "Failed to deduct tokens for prompt suggestion."}), 500
-    
-    token_module.record_transaction(
-        user_id,
-        "deduction",
-        cost,
-        "Prompt suggestion generation"
-    )
-
-    agent = UltimaWebAgent(api_key=GEMINI_API_KEY, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
-    suggested_prompt = agent.suggest_system_prompt()
-
-    if "Error generating prompt suggestion" in suggested_prompt:
-        return jsonify({"error": suggested_prompt}), 500 # Return 500 if Gemini failed
-
-    token_module.record_transaction(
-        user_id,
-        "response_generated",
-        0, # Cost already covered
-        "Suggested prompt generated",
-        {"suggested_prompt": suggested_prompt[:100]}
-    )
-    
-    return jsonify({"suggested_prompt": suggested_prompt})
-
 @app.route('/api/code/suggest_change', methods=['POST'])
 def suggest_code_change():
     if not GEMINI_API_KEY:
         return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
 
     data = request.get_json()
-    user_id = data.get('user_id', 'default_user') # For token system
+    user_id = data.get('user_id', 'default_user')
     file_path_param = data.get('file_path')
     change_description = data.get('change_description')
 
@@ -192,7 +175,6 @@ def suggest_code_change():
     if token_module.get_balance(user_id) < cost:
         return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
     
-    # Sanitize path to prevent directory traversal (same logic as read_code)
     absolute_file_path = os.path.abspath(os.path.join(PROJECT_ROOT, file_path_param))
     if not absolute_file_path.startswith(PROJECT_ROOT):
         return jsonify({"error": "Access denied: File outside project root"}), 403
@@ -220,53 +202,58 @@ def suggest_code_change():
     suggested_code = agent.suggest_code_change(file_content, change_description)
 
     if "Error generating code suggestion" in suggested_code:
-        return jsonify({"error": suggested_code}), 500 # Return 500 if Gemini failed
+        return jsonify({"error": suggested_code}), 500
 
     token_module.record_transaction(
         user_id,
         "response_generated",
-        0, # Cost already covered
+        0,
         "Suggested code generated",
         {"file_path": file_path_param, "suggested_code_start": suggested_code[:100]}
     )
 
     return jsonify({"file_path": file_path_param, "change_description": change_description, "suggested_code": suggested_code})
 
-@app.route('/api/token/balance', methods=['GET'])
-def get_token_balance():
+@app.route('/api/prompt/suggest', methods=['GET'])
+def suggest_prompt():
+    if not GEMINI_API_KEY:
+        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
+
     user_id = request.args.get('user_id', 'default_user')
-    balance = token_module.get_balance(user_id)
-    return jsonify({"user_id": user_id, "balance": balance})
+    cost = token_module.TOKEN_COST_PER_PROMPT_SUGGESTION
 
-@app.route('/api/prompt/get', methods=['GET'])
-def get_prompt():
-    return jsonify({"system_prompt": ULTIMA_AGENT_SYSTEM_PROMPT})
+    if token_module.get_balance(user_id) < cost:
+        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
+    
+    if not token_module.deduct_tokens(user_id, cost):
+        return jsonify({"error": "Failed to deduct tokens for prompt suggestion."}), 500
+    
+    token_module.record_transaction(
+        user_id,
+        "deduction",
+        cost,
+        "Prompt suggestion generation"
+    )
 
+    agent = UltimaWebAgent(api_key=GEMINI_API_KEY, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
+    suggested_prompt = agent.suggest_system_prompt()
 
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({
-        "status": "healthy",
-        "service": "Ultima AI Terminal",
-        "version": "2.0.0",
-        "ai_model": "Gemini Pro"
-    })
+    if "Error generating prompt suggestion" in suggested_prompt:
+        return jsonify({"error": suggested_prompt}), 500
 
-@app.route('/api/self', methods=['GET'])
-def self_reference():
-    return jsonify({
-        "message": "I am Ultima, an advanced AI assistant with cutting-edge capabilities.",
-        "capabilities": ["code generation", "analysis", "tool creation", "intelligent problem-solving"],
-        "status": "ready"
-    })
+    token_module.record_transaction(
+        user_id,
+        "response_generated",
+        0,
+        "Suggested prompt generated",
+        {"suggested_prompt": suggested_prompt[:100]}
+    )
+    
+    return jsonify({"suggested_prompt": suggested_prompt})
 
 @app.route('/', methods=['GET'])
 def api_root():
     return jsonify({"message": "Ultima AI Terminal API - Ready for interaction"})
 
-# Export the app for Vercel
-app = app
-
 if __name__ == '__main__':
-    # This block is for local testing purposes only. Vercel will run the app differently.
     app.run(debug=True, port=5000)
