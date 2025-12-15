@@ -79,11 +79,18 @@ def chat():
     )
 
     try:
+        print(f"Initializing agent with model: {GROQ_MODEL}")
         agent = UltimaWebAgent(model_name=GROQ_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
+        print(f"Sending message: {user_message[:50]}...")
         response_text = agent.send_message(user_message, chat_history)
+        print(f"Got response: {response_text[:50]}...")
     except ValueError as e:
+        print(f"ValueError: {e}")
         return jsonify({"error": str(e)}), 500
     except Exception as e:
+        print(f"Exception: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": f"AI service error: {str(e)}"}), 500
 
     token_module.record_transaction(
@@ -335,6 +342,10 @@ def purchase_tokens():
 @app.route('/', methods=['GET'])
 def api_root():
     return jsonify({"message": "Ultima AI Terminal API - Ready for interaction"})
+
+@app.route('/api/test', methods=['GET'])
+def test_endpoint():
+    return jsonify({"status": "API working", "groq_key_set": bool(GROQ_API_KEY)})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
