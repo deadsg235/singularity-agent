@@ -1,7 +1,6 @@
 # agent_web.py
 import os
-from langchain_groq import ChatGroq
-from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from groq import Groq
 
 # Ultima AI Agent branding
 AGENT_NAME_WEB = "Ultima"
@@ -14,11 +13,7 @@ class UltimaWebAgent:
         if not groq_api_key:
             raise ValueError("GROQ_API_KEY environment variable not set.")
         
-        self.llm = ChatGroq(
-            groq_api_key=groq_api_key,
-            model_name=model_name,
-            temperature=0.7
-        )
+        self.client = Groq(api_key=groq_api_key)
         self._system_prompt = system_prompt if system_prompt else DEFAULT_WEB_SYSTEM_PROMPT
         
     def get_system_prompt(self) -> str:
@@ -26,21 +21,27 @@ class UltimaWebAgent:
 
     def send_message(self, message: str, chat_history: list = None) -> str:
         try:
-            messages = [SystemMessage(content=self._system_prompt)]
+            messages = [{"role": "system", "content": self._system_prompt}]
             
             if chat_history:
                 for msg in chat_history:
                     role = msg.get('role', '')
                     content = msg.get('parts', '')
                     if role == 'user':
-                        messages.append(HumanMessage(content=content))
+                        messages.append({"role": "user", "content": content})
                     elif role == 'model':
-                        messages.append(AIMessage(content=content))
+                        messages.append({"role": "assistant", "content": content})
             
-            messages.append(HumanMessage(content=message))
+            messages.append({"role": "user", "content": message})
             
-            response = self.llm.invoke(messages)
-            return response.content
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1024
+            )
+            
+            return response.choices[0].message.content
             
         except Exception as e:
             return f"Error communicating with Groq: {e}"
@@ -55,9 +56,13 @@ class UltimaWebAgent:
             "Provide only the new system prompt text, nothing else."
         )
         try:
-            messages = [HumanMessage(content=suggestion_prompt)]
-            response = self.llm.invoke(messages)
-            return response.content.strip()
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": suggestion_prompt}],
+                temperature=0.7,
+                max_tokens=512
+            )
+            return response.choices[0].message.content.strip()
         except Exception as e:
             return f"Error generating prompt suggestion: {e}"
 
@@ -72,8 +77,12 @@ class UltimaWebAgent:
             "Provide only the code suggestion, nothing else. If you provide a diff, start with `---`."
         )
         try:
-            messages = [HumanMessage(content=code_suggestion_prompt)]
-            response = self.llm.invoke(messages)
-            return response.content.strip()
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": code_suggestion_prompt}],
+                temperature=0.3,
+                max_tokens=1024
+            )
+            return response.choices[0].message.content.strip()
         except Exception as e:
             return f"Error generating code suggestion: {e}"
