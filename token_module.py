@@ -13,6 +13,7 @@ _transactions = [] # List to store simulated transactions
 TOKEN_COST_PER_CHAT_MESSAGE = 10 # Example cost
 TOKEN_COST_PER_PROMPT_SUGGESTION = 50
 TOKEN_COST_PER_CODE_SUGGESTION = 100
+TOKEN_COST_PER_TOOL_SUGGESTION = 150
 
 def get_balance(user_id: str = "default_user") -> int:
     """Retrieves the simulated token balance for a given user."""

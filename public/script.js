@@ -162,6 +162,94 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const projectFilesBtn = document.getElementById('projectFilesBtn');
+    
+    // Modal Elements
+    const projectFilesModal = document.getElementById('projectFilesModal');
+    const closeModalButton = projectFilesModal.querySelector('.close-button');
+    const modalSystemPrompt = document.getElementById('modalSystemPrompt');
+    const projectFilesList = document.getElementById('projectFilesList');
+    const suggestToolBtn = document.getElementById('suggestToolBtn');
+
+    // Hardcoded list of key project files for the modal
+    const KEY_PROJECT_FILES = [
+        'api/index.py',
+        'agent_web.py',
+        'token_module.py',
+        'ml_core/deep_q_tool_generator.py',
+        'public/index.html',
+        'public/style.css',
+        'public/script.js',
+        'requirements.txt',
+        'vercel.json'
+    ];
+
+    // New function for suggesting tools
+    async function suggestNewTool() {
+        const taskDescription = prompt('Describe the new tool you want the agent to generate (e.g., "A Python function to calculate Fibonacci numbers"):');
+        if (!taskDescription) return;
+
+        suggestToolBtn.disabled = true;
+        suggestToolBtn.textContent = 'Suggesting Tool...';
+
+        try {
+            const response = await fetch('/api/tool/suggest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ task_description: taskDescription, user_id: USER_ID })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert(`Suggested Tool Code:\n\n${data.suggested_tool_code}\n\n(Remember: This is a suggestion for manual review and application.)`);
+            } else {
+                alert(`Error suggesting tool: ${data.error || 'Something went wrong.'}`);
+            }
+        } catch (error) {
+            console.error('Error suggesting tool:', error);
+            alert('Error connecting to the API to suggest tool.');
+        } finally {
+            suggestToolBtn.disabled = false;
+            suggestToolBtn.textContent = 'Suggest New Tool';
+        }
+    }
+
+    // Function to open the Project Files modal
+    async function openProjectFilesModal() {
+        projectFilesModal.style.display = 'block';
+
+        // Fetch and display system prompt
+        try {
+            const response = await fetch('/api/prompt/get');
+            const data = await response.json();
+            if (response.ok) {
+                modalSystemPrompt.textContent = data.system_prompt;
+            } else {
+                modalSystemPrompt.textContent = `Error: ${data.error || 'Could not fetch system prompt.'}`;
+            }
+        } catch (error) {
+            modalSystemPrompt.textContent = 'Error fetching system prompt.';
+            console.error('Error fetching system prompt for modal:', error);
+        }
+
+        // Populate project files list
+        projectFilesList.innerHTML = ''; // Clear previous list
+        KEY_PROJECT_FILES.forEach(filePath => {
+            const listItem = document.createElement('li');
+            listItem.textContent = filePath;
+            listItem.onclick = () => readCodeFile(filePath); // Make file clickable
+            projectFilesList.appendChild(listItem);
+        });
+    }
+
+    // Function to close the Project Files modal
+    function closeProjectFilesModal() {
+        projectFilesModal.style.display = 'none';
+    }
+
+    // Event Listeners
     sendBtn.addEventListener('click', sendMessage);
     userInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -170,7 +258,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     viewPromptBtn.addEventListener('click', viewSystemPrompt);
     suggestPromptBtn.addEventListener('click', suggestNewPrompt);
-    readCodeBtn.addEventListener('click', readCodeFile);
+    readCodeBtn.addEventListener('click', () => readCodeFile(null)); // Pass null so it prompts
     suggestCodeChangeBtn.addEventListener('click', suggestCodeChange);
     checkBalanceBtn.addEventListener('click', checkTokenBalance);
+    projectFilesBtn.addEventListener('click', openProjectFilesModal);
+    closeModalButton.addEventListener('click', closeProjectFilesModal);
+    suggestToolBtn.addEventListener('click', suggestNewTool);
+
+    // Close modal if user clicks outside of it
+    window.addEventListener('click', (event) => {
+        if (event.target == projectFilesModal) {
+            closeProjectFilesModal();
+        }
+    });
 });
+

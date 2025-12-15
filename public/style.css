@@ -147,3 +147,101 @@ body {
 .chat-box::-webkit-scrollbar-thumb:hover {
     background-color: #cc0000;
 }
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #1a1a1a;
+    margin: 5% auto; /* 15% from the top and centered */
+    padding: 30px;
+    border: 2px solid #ff0000;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 700px;
+    border-radius: 10px;
+    position: relative;
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.6);
+}
+
+.modal-content h2 {
+    color: #ffcccc;
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #cc0000;
+    padding-bottom: 10px;
+}
+
+.close-button {
+    color: #f0f0f0;
+    position: absolute;
+    top: 10px;
+    right: 25px;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: #ff0000;
+    text-decoration: none;
+}
+
+.modal-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #440000;
+    border-radius: 8px;
+    background-color: #0d0d0d;
+}
+
+.modal-section h3 {
+    color: #ff9999;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#modalSystemPrompt {
+    background-color: #000;
+    padding: 10px;
+    border: 1px dashed #660000;
+    border-radius: 5px;
+    color: #f0f0f0;
+    white-space: pre-wrap; /* Preserve whitespace and line breaks */
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+}
+
+#projectFilesList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#projectFilesList li {
+    background-color: #220000;
+    margin-bottom: 5px;
+    padding: 8px 10px;
+    border-left: 3px solid #ff0000;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: #ffcccc;
+}
+
+#projectFilesList li:hover {
+    background-color: #330000;
+    border-left-color: #ff3333;
+}
+

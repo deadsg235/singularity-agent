@@ -16,6 +16,7 @@
                 <button id="readCodeBtn" class="control-btn">Read Code File</button>
                 <button id="suggestCodeChangeBtn" class="control-btn">Suggest Code Change</button>
                 <button id="checkBalanceBtn" class="control-btn">Check Balance</button>
+                <button id="projectFilesBtn" class="control-btn">Project Files</button>
             </div>
         </div>
         <div class="chat-box" id="chatBox">
@@ -30,5 +31,25 @@
     </div>
 
     <script src="script.js"></script>
+
+    <div id="projectFilesModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Project Files & Configuration</h2>
+            <div class="modal-section">
+                <h3>Current System Prompt:</h3>
+                <p id="modalSystemPrompt"></p>
+            </div>
+            <div class="modal-section">
+                <h3>Key Project Files:</h3>
+                <ul id="projectFilesList">
+                    <!-- Files will be populated by JavaScript -->
+                </ul>
+            </div>
+            <div class="modal-section">
+                <button id="suggestToolBtn" class="control-btn">Suggest New Tool</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

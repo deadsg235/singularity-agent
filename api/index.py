@@ -4,6 +4,7 @@ from flask_cors import CORS
 import os
 from agent_web import UltimaWebAgent, DEFAULT_WEB_SYSTEM_PROMPT
 import token_module # Import the token module
+from ml_core.deep_q_tool_generator import DeepQToolGenerator # Import the tool generator
 
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins, adjust in production
@@ -20,6 +21,49 @@ ULTIMA_AGENT_SYSTEM_PROMPT = os.getenv("ULTIMA_AGENT_SYSTEM_PROMPT", DEFAULT_WEB
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__)) # This is 'api' directory
 # Go up one level to get to the main project root
 PROJECT_ROOT = os.path.dirname(PROJECT_ROOT)
+
+@app.route('/api/tool/suggest', methods=['POST'])
+def suggest_tool():
+    if not GEMINI_API_KEY:
+        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
+
+    data = request.get_json()
+    user_id = data.get('user_id', 'default_user')
+    task_description = data.get('task_description')
+
+    if not task_description:
+        return jsonify({"error": "task_description is required"}), 400
+
+    cost = token_module.TOKEN_COST_PER_TOOL_SUGGESTION
+    if token_module.get_balance(user_id) < cost:
+        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
+
+    if not token_module.deduct_tokens(user_id, cost):
+        return jsonify({"error": "Failed to deduct tokens for tool suggestion."}), 500
+    
+    token_module.record_transaction(
+        user_id,
+        "deduction",
+        cost,
+        "Tool suggestion generation",
+        {"task_description": task_description[:100]}
+    )
+
+    tool_generator = DeepQToolGenerator(api_key=GEMINI_API_KEY)
+    suggested_tool_code = tool_generator.generate_tool_code(task_description)
+
+    if "Error generating tool code" in suggested_tool_code:
+        return jsonify({"error": suggested_tool_code}), 500
+
+    token_module.record_transaction(
+        user_id,
+        "response_generated",
+        0, # Cost already covered
+        "Suggested tool code generated",
+        {"suggested_tool_code_start": suggested_tool_code[:100]}
+    )
+
+    return jsonify({"task_description": task_description, "suggested_tool_code": suggested_tool_code})
 
 @app.route('/api/code/read', methods=['GET'])
 def read_code():
