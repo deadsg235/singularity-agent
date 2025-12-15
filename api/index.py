@@ -1,351 +1,231 @@
-# api/index.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import sys
+import traceback
 
-# Add parent directory to path for imports
+# Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent_web import UltimaWebAgent, DEFAULT_WEB_SYSTEM_PROMPT
-import token_module
-from ml_core.deep_q_tool_generator import DeepQToolGenerator
-
 app = Flask(__name__)
-CORS(app, origins=['*'], methods=['GET', 'POST', 'OPTIONS'], allow_headers=['Content-Type'])
+CORS(app)
 
-# Load environment variables
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+# Configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    print("Warning: GROQ_API_KEY environment variable not set. API calls will fail.")
-else:
-    print(f"Using Groq model: {GROQ_MODEL}")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")
 
-# System prompt from environment variable, fallback to default
-ULTIMA_AGENT_SYSTEM_PROMPT = os.getenv("ULTIMA_AGENT_SYSTEM_PROMPT", DEFAULT_WEB_SYSTEM_PROMPT)
+# Simple in-memory token system
+user_tokens = {"default_user": 1000}
+token_costs = {
+    "chat": 5,
+    "code": 50,
+    "tool": 75,
+    "prompt": 25
+}
 
-# Define project root for secure file access
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(PROJECT_ROOT)
+def deduct_tokens(user_id, cost):
+    if user_tokens.get(user_id, 0) >= cost:
+        user_tokens[user_id] -= cost
+        return True
+    return False
+
+def get_balance(user_id):
+    return user_tokens.get(user_id, 0)
+
+# Groq client
+def call_groq(messages, max_tokens=1024):
+    if not GROQ_API_KEY:
+        return "Error: GROQ_API_KEY not configured"
+    
+    try:
+        import groq
+        client = groq.Groq(api_key=GROQ_API_KEY)
+        
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=0.7
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 @app.route('/api/health', methods=['GET'])
-def health_check():
-    groq_status = "configured" if GROQ_API_KEY else "missing"
+def health():
     return jsonify({
-        "status": "healthy" if GROQ_API_KEY else "degraded",
+        "status": "healthy",
         "service": "Ultima AI Terminal",
-        "version": "2.0.0",
-        "ai_model": f"Groq {GROQ_MODEL}",
-        "token_system": "Ultima Tokens Active",
-        "llm_provider": "Groq (Fast & Free)",
-        "groq_api_key": groq_status
-    })
-
-@app.route('/api/self', methods=['GET'])
-def self_reference():
-    return jsonify({
-        "message": "I am Ultima, an advanced AI assistant with cutting-edge capabilities.",
-        "capabilities": ["code generation", "analysis", "tool creation", "intelligent problem-solving"],
-        "status": "ready"
+        "groq_configured": bool(GROQ_API_KEY),
+        "model": GROQ_MODEL
     })
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    if not GROQ_API_KEY:
-        return jsonify({"error": "GROQ_API_KEY is not set."}), 500
-
-    data = request.get_json()
-    user_message = data.get('message')
-    chat_history = data.get('history', [])
-    user_id = data.get('user_id', 'default_user')
-
-    if not user_message:
-        return jsonify({"error": "No message provided"}), 400
-
-    cost = token_module.TOKEN_COST_PER_CHAT_MESSAGE
-    if token_module.get_balance(user_id) < cost:
-        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
-
-    if not token_module.deduct_tokens(user_id, cost):
-        return jsonify({"error": "Failed to deduct tokens."}), 500
-    
-    token_module.record_transaction(
-        user_id,
-        "deduction",
-        cost,
-        "Chat message processing",
-        {"user_message": user_message[:100]}
-    )
-
     try:
-        print(f"Initializing agent with model: {GROQ_MODEL}")
-        agent = UltimaWebAgent(model_name=GROQ_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
-        print(f"Sending message: {user_message[:50]}...")
-        response_text = agent.send_message(user_message, chat_history)
-        print(f"Got response: {response_text[:50]}...")
-    except ValueError as e:
-        print(f"ValueError: {e}")
-        return jsonify({"error": str(e)}), 500
+        data = request.get_json()
+        message = data.get('message', '')
+        user_id = data.get('user_id', 'default_user')
+        history = data.get('history', [])
+        
+        if not message:
+            return jsonify({"error": "No message provided"}), 400
+            
+        # Check tokens
+        cost = token_costs["chat"]
+        if not deduct_tokens(user_id, cost):
+            return jsonify({"error": f"Insufficient tokens. Need {cost}, have {get_balance(user_id)}"}), 402
+        
+        # Build messages
+        messages = [{"role": "system", "content": "You are Ultima, an advanced AI assistant with cutting-edge capabilities."}]
+        
+        # Add history
+        for msg in history[-10:]:  # Last 10 messages
+            role = "user" if msg.get('role') == 'user' else "assistant"
+            content = msg.get('parts', '')
+            if content:
+                messages.append({"role": role, "content": content})
+        
+        messages.append({"role": "user", "content": message})
+        
+        # Get response
+        response = call_groq(messages)
+        
+        return jsonify({"response": response})
+        
     except Exception as e:
-        print(f"Exception: {type(e).__name__}: {e}")
-        import traceback
         traceback.print_exc()
-        return jsonify({"error": f"AI service error: {str(e)}"}), 500
-
-    token_module.record_transaction(
-        user_id,
-        "response_generated",
-        0,
-        "Agent response generated",
-        {"agent_response": response_text[:100]}
-    )
-
-    response = jsonify({"response": response_text})
-    response.headers['Content-Type'] = 'application/json'
-    return response
-
-@app.route('/api/token/balance', methods=['GET'])
-def get_token_balance():
-    user_id = request.args.get('user_id', 'default_user')
-    balance = token_module.get_balance(user_id)
-    return jsonify({"user_id": user_id, "balance": balance})
-
-@app.route('/api/prompt/get', methods=['GET'])
-def get_prompt():
-    return jsonify({"system_prompt": ULTIMA_AGENT_SYSTEM_PROMPT})
-
-@app.route('/api/tool/suggest', methods=['POST'])
-def suggest_tool():
-    if not GROQ_API_KEY:
-        return jsonify({"error": "GROQ_API_KEY is not set."}), 500
-    
-    data = request.get_json()
-    user_id = data.get('user_id', 'default_user')
-    task_description = data.get('task_description')
-
-    if not task_description:
-        return jsonify({"error": "task_description is required"}), 400
-
-    cost = token_module.TOKEN_COST_PER_TOOL_SUGGESTION
-    if token_module.get_balance(user_id) < cost:
-        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
-
-    if not token_module.deduct_tokens(user_id, cost):
-        return jsonify({"error": "Failed to deduct tokens for tool suggestion."}), 500
-    
-    token_module.record_transaction(
-        user_id,
-        "deduction",
-        cost,
-        "Tool suggestion generation",
-        {"task_description": task_description[:100]}
-    )
-
-    tool_generator = DeepQToolGenerator(model_name=GROQ_MODEL)
-    suggested_tool_code = tool_generator.generate_tool_code(task_description)
-
-    if "Error generating tool code" in suggested_tool_code:
-        return jsonify({"error": suggested_tool_code}), 500
-
-    token_module.record_transaction(
-        user_id,
-        "response_generated",
-        0,
-        "Suggested tool code generated",
-        {"suggested_tool_code_start": suggested_tool_code[:100]}
-    )
-
-    return jsonify({"task_description": task_description, "suggested_tool_code": suggested_tool_code})
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
 
 @app.route('/api/code/read', methods=['GET'])
 def read_code():
-    file_path_param = request.args.get('file_path')
-    if not file_path_param:
-        return jsonify({"error": "file_path parameter is required"}), 400
-
-    absolute_file_path = os.path.abspath(os.path.join(PROJECT_ROOT, file_path_param))
-
-    if not absolute_file_path.startswith(PROJECT_ROOT):
-        return jsonify({"error": "Access denied: File outside project root"}), 403
-
-    if not os.path.exists(absolute_file_path):
-        return jsonify({"error": f"File not found: {file_path_param}"}), 404
-
     try:
-        with open(absolute_file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        return jsonify({"file_path": file_path_param, "content": content})
+        file_path = request.args.get('file_path', '')
+        if not file_path:
+            return jsonify({"error": "file_path required"}), 400
+            
+        # Security: only allow certain files
+        allowed_files = [
+            'api/index.py', 'public/index.html', 'public/style.css', 
+            'public/script.js', 'requirements.txt', 'vercel.json'
+        ]
+        
+        if file_path not in allowed_files:
+            return jsonify({"error": "File not allowed"}), 403
+            
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        full_path = os.path.join(project_root, file_path)
+        
+        if os.path.exists(full_path):
+            with open(full_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return jsonify({"file_path": file_path, "content": content})
+        else:
+            return jsonify({"error": "File not found"}), 404
+            
     except Exception as e:
-        return jsonify({"error": f"Error reading file: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
-@app.route('/api/code/suggest_change', methods=['POST'])
-def suggest_code_change():
-    if not GROQ_API_KEY:
-        return jsonify({"error": "GROQ_API_KEY is not set."}), 500
-
-    data = request.get_json()
-    user_id = data.get('user_id', 'default_user')
-    file_path_param = data.get('file_path')
-    change_description = data.get('change_description')
-
-    if not file_path_param or not change_description:
-        return jsonify({"error": "file_path and change_description are required"}), 400
-
-    cost = token_module.TOKEN_COST_PER_CODE_SUGGESTION
-    if token_module.get_balance(user_id) < cost:
-        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
-    
-    absolute_file_path = os.path.abspath(os.path.join(PROJECT_ROOT, file_path_param))
-    if not absolute_file_path.startswith(PROJECT_ROOT):
-        return jsonify({"error": "Access denied: File outside project root"}), 403
-    if not os.path.exists(absolute_file_path):
-        return jsonify({"error": f"File not found: {file_path_param}"}), 404
-
+@app.route('/api/code/suggest', methods=['POST'])
+def suggest_code():
     try:
-        with open(absolute_file_path, 'r', encoding='utf-8') as f:
-            file_content = f.read()
+        data = request.get_json()
+        user_id = data.get('user_id', 'default_user')
+        file_content = data.get('file_content', '')
+        description = data.get('description', '')
+        
+        if not file_content or not description:
+            return jsonify({"error": "file_content and description required"}), 400
+            
+        cost = token_costs["code"]
+        if not deduct_tokens(user_id, cost):
+            return jsonify({"error": f"Insufficient tokens. Need {cost}, have {get_balance(user_id)}"}), 402
+        
+        prompt = f"""Given this code:
+```
+{file_content}
+```
+
+Request: {description}
+
+Provide a code suggestion to implement this change. Focus on correctness and best practices."""
+
+        messages = [{"role": "user", "content": prompt}]
+        response = call_groq(messages)
+        
+        return jsonify({"suggestion": response})
+        
     except Exception as e:
-        return jsonify({"error": f"Error reading file for suggestion: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
-    if not token_module.deduct_tokens(user_id, cost):
-        return jsonify({"error": "Failed to deduct tokens for code suggestion."}), 500
-    
-    token_module.record_transaction(
-        user_id,
-        "deduction",
-        cost,
-        "Code suggestion generation",
-        {"file_path": file_path_param, "description": change_description[:100]}
-    )
+@app.route('/api/tool/generate', methods=['POST'])
+def generate_tool():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id', 'default_user')
+        description = data.get('description', '')
+        
+        if not description:
+            return jsonify({"error": "description required"}), 400
+            
+        cost = token_costs["tool"]
+        if not deduct_tokens(user_id, cost):
+            return jsonify({"error": f"Insufficient tokens. Need {cost}, have {get_balance(user_id)}"}), 402
+        
+        prompt = f"""Generate a complete Python tool for: {description}
 
-    agent = UltimaWebAgent(model_name=GROQ_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
-    suggested_code = agent.suggest_code_change(file_content, change_description)
+Requirements:
+- Include all necessary imports
+- Add clear function definitions
+- Include comments and docstrings
+- Make it self-contained and runnable
+- Provide only the code, nothing else"""
 
-    if "Error generating code suggestion" in suggested_code:
-        return jsonify({"error": suggested_code}), 500
+        messages = [{"role": "user", "content": prompt}]
+        response = call_groq(messages, max_tokens=2048)
+        
+        return jsonify({"code": response})
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-    token_module.record_transaction(
-        user_id,
-        "response_generated",
-        0,
-        "Suggested code generated",
-        {"file_path": file_path_param, "suggested_code_start": suggested_code[:100]}
-    )
-
-    return jsonify({"file_path": file_path_param, "change_description": change_description, "suggested_code": suggested_code})
-
-@app.route('/api/prompt/suggest', methods=['GET'])
-def suggest_prompt():
-    if not GROQ_API_KEY:
-        return jsonify({"error": "GROQ_API_KEY is not set."}), 500
-
+@app.route('/api/token/balance', methods=['GET'])
+def token_balance():
     user_id = request.args.get('user_id', 'default_user')
-    cost = token_module.TOKEN_COST_PER_PROMPT_SUGGESTION
+    balance = get_balance(user_id)
+    return jsonify({"user_id": user_id, "balance": balance})
 
-    if token_module.get_balance(user_id) < cost:
-        return jsonify({"error": f"Insufficient Ultima Tokens. Balance: {token_module.get_balance(user_id)}, Cost: {cost}"}), 402
-    
-    if not token_module.deduct_tokens(user_id, cost):
-        return jsonify({"error": "Failed to deduct tokens for prompt suggestion."}), 500
-    
-    token_module.record_transaction(
-        user_id,
-        "deduction",
-        cost,
-        "Prompt suggestion generation"
-    )
-
-    agent = UltimaWebAgent(model_name=GROQ_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
-    suggested_prompt = agent.suggest_system_prompt()
-
-    if "Error generating prompt suggestion" in suggested_prompt:
-        return jsonify({"error": suggested_prompt}), 500
-
-    token_module.record_transaction(
-        user_id,
-        "response_generated",
-        0,
-        "Suggested prompt generated",
-        {"suggested_prompt": suggested_prompt[:100]}
-    )
-    
-    return jsonify({"suggested_prompt": suggested_prompt})
+@app.route('/api/token/add', methods=['POST'])
+def add_tokens():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id', 'default_user')
+        amount = data.get('amount', 0)
+        
+        if amount > 0:
+            user_tokens[user_id] = user_tokens.get(user_id, 0) + amount
+            return jsonify({"success": True, "new_balance": user_tokens[user_id]})
+        else:
+            return jsonify({"error": "Invalid amount"}), 400
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/files', methods=['GET'])
 def list_files():
-    """List project files for the file explorer"""
-    try:
-        files = []
-        for root, dirs, filenames in os.walk(PROJECT_ROOT):
-            # Skip hidden directories and common build directories
-            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['__pycache__', 'node_modules', '.git']]
-            
-            rel_root = os.path.relpath(root, PROJECT_ROOT)
-            if rel_root == '.':
-                rel_root = ''
-            
-            for filename in filenames:
-                if not filename.startswith('.') and not filename.endswith('.pyc'):
-                    file_path = os.path.join(rel_root, filename) if rel_root else filename
-                    files.append({
-                        "name": filename,
-                        "path": file_path,
-                        "type": "file",
-                        "size": os.path.getsize(os.path.join(root, filename))
-                    })
-        
-        return jsonify({"files": files})
-    except Exception as e:
-        return jsonify({"error": f"Error listing files: {str(e)}"}), 500
-
-@app.route('/api/token/pricing', methods=['GET'])
-def get_token_pricing():
-    """Get Ultima token pricing information"""
-    pricing = token_module.get_token_price()
-    return jsonify(pricing)
-
-@app.route('/api/token/purchase', methods=['POST'])
-def purchase_tokens():
-    """Purchase Ultima tokens (simulation)"""
-    data = request.get_json()
-    user_id = data.get('user_id', 'default_user')
-    package = data.get('package', 'starter')
-    
-    pricing = token_module.get_token_price()
-    if package not in pricing['packages']:
-        return jsonify({"error": "Invalid package"}), 400
-    
-    package_info = pricing['packages'][package]
-    tokens_to_add = package_info['tokens']
-    
-    # Simulate successful payment
-    if token_module.add_tokens(user_id, tokens_to_add):
-        token_module.record_transaction(
-            user_id,
-            "purchase",
-            tokens_to_add,
-            f"Purchased {package} package",
-            {"package": package, "price": package_info['price']}
-        )
-        
-        new_balance = token_module.get_balance(user_id)
-        return jsonify({
-            "success": True,
-            "tokens_added": tokens_to_add,
-            "new_balance": new_balance,
-            "package": package
-        })
-    else:
-        return jsonify({"error": "Failed to add tokens"}), 500
+    files = [
+        {"name": "api/index.py", "type": "file"},
+        {"name": "public/index.html", "type": "file"},
+        {"name": "public/style.css", "type": "file"},
+        {"name": "public/script.js", "type": "file"},
+        {"name": "requirements.txt", "type": "file"},
+        {"name": "vercel.json", "type": "file"}
+    ]
+    return jsonify({"files": files})
 
 @app.route('/', methods=['GET'])
-def api_root():
-    return jsonify({"message": "Ultima AI Terminal API - Ready for interaction"})
-
-@app.route('/api/test', methods=['GET'])
-def test_endpoint():
-    return jsonify({"status": "API working", "groq_key_set": bool(GROQ_API_KEY)})
+def root():
+    return jsonify({"message": "Ultima AI Terminal API - Ready"})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
