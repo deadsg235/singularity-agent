@@ -15,9 +15,8 @@ app = Flask(__name__)
 CORS(app)
 
 # Load environment variables
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    print("Warning: GEMINI_API_KEY environment variable not set. API calls will fail.")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+print(f"Using Ollama model: {OLLAMA_MODEL}")
 
 # System prompt from environment variable, fallback to default
 ULTIMA_AGENT_SYSTEM_PROMPT = os.getenv("ULTIMA_AGENT_SYSTEM_PROMPT", DEFAULT_WEB_SYSTEM_PROMPT)
@@ -32,8 +31,9 @@ def health_check():
         "status": "healthy",
         "service": "Ultima AI Terminal",
         "version": "2.0.0",
-        "ai_model": "Gemini 2.0 Flash Exp",
-        "token_system": "Ultima Tokens Active"
+        "ai_model": f"Ollama {OLLAMA_MODEL}",
+        "token_system": "Ultima Tokens Active",
+        "llm_provider": "Ollama (Free)"
     })
 
 @app.route('/api/self', methods=['GET'])
@@ -46,8 +46,6 @@ def self_reference():
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
 
     data = request.get_json()
     user_message = data.get('message')
@@ -72,7 +70,7 @@ def chat():
         {"user_message": user_message[:100]}
     )
 
-    agent = UltimaWebAgent(api_key=GEMINI_API_KEY, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
+    agent = UltimaWebAgent(model_name=OLLAMA_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
     response_text = agent.send_message(user_message, chat_history)
 
     token_module.record_transaction(
@@ -97,9 +95,6 @@ def get_prompt():
 
 @app.route('/api/tool/suggest', methods=['POST'])
 def suggest_tool():
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
-
     data = request.get_json()
     user_id = data.get('user_id', 'default_user')
     task_description = data.get('task_description')
@@ -122,7 +117,7 @@ def suggest_tool():
         {"task_description": task_description[:100]}
     )
 
-    tool_generator = DeepQToolGenerator(api_key=GEMINI_API_KEY)
+    tool_generator = DeepQToolGenerator(model_name=OLLAMA_MODEL)
     suggested_tool_code = tool_generator.generate_tool_code(task_description)
 
     if "Error generating tool code" in suggested_tool_code:
@@ -161,8 +156,6 @@ def read_code():
 
 @app.route('/api/code/suggest_change', methods=['POST'])
 def suggest_code_change():
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
 
     data = request.get_json()
     user_id = data.get('user_id', 'default_user')
@@ -199,7 +192,7 @@ def suggest_code_change():
         {"file_path": file_path_param, "description": change_description[:100]}
     )
 
-    agent = UltimaWebAgent(api_key=GEMINI_API_KEY, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
+    agent = UltimaWebAgent(model_name=OLLAMA_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
     suggested_code = agent.suggest_code_change(file_content, change_description)
 
     if "Error generating code suggestion" in suggested_code:
@@ -217,8 +210,6 @@ def suggest_code_change():
 
 @app.route('/api/prompt/suggest', methods=['GET'])
 def suggest_prompt():
-    if not GEMINI_API_KEY:
-        return jsonify({"error": "GEMINI_API_KEY is not set."}), 500
 
     user_id = request.args.get('user_id', 'default_user')
     cost = token_module.TOKEN_COST_PER_PROMPT_SUGGESTION
@@ -236,7 +227,7 @@ def suggest_prompt():
         "Prompt suggestion generation"
     )
 
-    agent = UltimaWebAgent(api_key=GEMINI_API_KEY, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
+    agent = UltimaWebAgent(model_name=OLLAMA_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
     suggested_prompt = agent.suggest_system_prompt()
 
     if "Error generating prompt suggestion" in suggested_prompt:

@@ -1,18 +1,14 @@
 # ml_core/deep_q_tool_generator.py
-import google.generativeai as genai
+from langchain_community.llms import Ollama
 
 class DeepQToolGenerator:
-    def __init__(self, api_key: str):
-        if not api_key:
-            raise ValueError("API Key is required for DeepQToolGenerator.")
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+    def __init__(self, model_name: str = "llama3.2"):
+        self.model_name = model_name
+        self.llm = Ollama(model=model_name, base_url="http://localhost:11434")
 
     def generate_tool_code(self, task_description: str) -> str:
         """
-        Simulates an AI generating Python code for a tool based on a task description.
-        In a true DeepQ implementation, this would involve complex RL inference.
-        Here, we use the Gemini model to directly generate the code.
+        Generate Python code for a tool based on a task description using Ollama.
         """
         prompt = (
             f"You are an advanced AI specialized in generating Python tools. "
@@ -22,7 +18,7 @@ class DeepQToolGenerator:
             f"The tool should be self-contained. Provide only the code, nothing else."
         )
         try:
-            response = self.model.generate_content(prompt)
-            return response.text.strip()
+            response = self.llm.invoke(prompt)
+            return response.strip()
         except Exception as e:
             return f"Error generating tool code: {e}"

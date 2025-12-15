@@ -1,11 +1,12 @@
 # Ultima AI Terminal
 
-A sleek, terminal-style AI assistant powered by Google's Gemini AI with advanced tool generation capabilities.
+A sleek, terminal-style AI assistant powered by Ollama with advanced tool generation capabilities.
 
 ## ✨ Features
 
 - **Terminal Interface**: Sleek, hacker-style terminal UI with real-time interaction
 - **Ultima AI**: Advanced AI assistant with code generation and analysis
+- **Free LLM**: Powered by Ollama - no API keys required
 - **Tool Generation**: AI-powered Python tool creation from natural language
 - **Code Analysis**: Read, analyze, and suggest improvements to code files
 - **Smart Commands**: Built-in terminal commands and AI chat integration
@@ -15,17 +16,30 @@ A sleek, terminal-style AI assistant powered by Google's Gemini AI with advanced
 ## 🚀 Tech Stack
 
 - **Backend**: Flask (Python) + Serverless Functions
-- **AI Model**: Google Gemini Pro
+- **AI Model**: Ollama (llama3.2, codellama, etc.)
+- **LLM Framework**: LangChain
 - **Frontend**: Vanilla JS + Terminal CSS
 - **Deployment**: Vercel
 - **Fonts**: JetBrains Mono
 
-## 🔧 Environment Setup
+## 🔧 Setup Requirements
 
-Set in Vercel dashboard or `.env.local`:
-
+### 1. Install Ollama
 ```bash
-GEMINI_API_KEY=your_gemini_api_key_here
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull a model (e.g., llama3.2)
+ollama pull llama3.2
+
+# Start Ollama server
+ollama serve
+```
+
+### 2. Environment Setup
+Set in Vercel dashboard or `.env.local`:
+```bash
+OLLAMA_MODEL=llama3.2
 ULTIMA_AGENT_SYSTEM_PROMPT=optional_custom_prompt
 ```
 
@@ -34,6 +48,9 @@ ULTIMA_AGENT_SYSTEM_PROMPT=optional_custom_prompt
 ```bash
 # Install dependencies
 pip install -r requirements.txt
+
+# Ensure Ollama is running
+ollama serve
 
 # Run development server
 python api/index.py
@@ -51,8 +68,7 @@ npm i -g vercel
 # Deploy
 vercel --prod
 
-# Or use helper script
-python deploy.py
+# Set environment variables in Vercel dashboard
 ```
 
 ## 🎯 Terminal Commands
@@ -89,7 +105,7 @@ ultima-terminal/
 │   ├── index.html            # Terminal interface
 │   ├── script.js             # Terminal logic
 │   └── style.css             # Terminal styling
-├── agent_web.py              # Ultima AI agent
+├── agent_web.py              # Ultima AI agent (Ollama)
 ├── token_module.py           # Token management
 ├── requirements.txt          # Dependencies
 ├── vercel.json              # Vercel config
@@ -106,7 +122,7 @@ ultima-terminal/
 
 ## 🎨 Terminal Features
 
-- **Sleek Design**: Modern terminal aesthetic with green glow effects
+- **Sleek Design**: Modern terminal aesthetic with red glow effects
 - **Responsive**: Works on desktop and mobile devices
 - **Real-time**: Live typing indicators and status updates
 - **Interactive**: Click-to-use tools and commands
@@ -114,24 +130,33 @@ ultima-terminal/
 
 ## 📊 Token System
 
-- Chat messages: 10 tokens
-- Code suggestions: 100 tokens
-- Tool generation: 150 tokens
-- Prompt suggestions: 50 tokens
+- Chat messages: 5 tokens
+- Code suggestions: 50 tokens
+- Tool generation: 75 tokens
+- Prompt suggestions: 25 tokens
 - Starting balance: 1000 tokens
+
+## 🆓 Free LLM Benefits
+
+- **No API costs** - Run completely free with Ollama
+- **Privacy** - All processing happens locally
+- **Customizable** - Use any Ollama-supported model
+- **Offline capable** - Works without internet (after model download)
 
 ## 🚀 Quick Start
 
-1. **Clone & Setup**
+1. **Install Ollama**
+   ```bash
+   curl -fsSL https://ollama.ai/install.sh | sh
+   ollama pull llama3.2
+   ollama serve
+   ```
+
+2. **Clone & Setup**
    ```bash
    git clone <repo>
    cd singularity-agent
    pip install -r requirements.txt
-   ```
-
-2. **Configure**
-   ```bash
-   echo "GEMINI_API_KEY=your_key" > .env.local
    ```
 
 3. **Deploy**
@@ -145,6 +170,13 @@ ultima-terminal/
    - Chat with Ultima AI
    - Use tools panel (⚡ button)
 
+## 🤖 Supported Models
+
+- **llama3.2** - General purpose (recommended)
+- **codellama** - Code-focused
+- **mistral** - Fast and efficient
+- **phi3** - Lightweight option
+
 ## 📝 License
 
-MIT License - Build amazing AI terminals!
+MIT License - Build amazing AI terminals for free!
