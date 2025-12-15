@@ -15,8 +15,5 @@
     "flask"
   ],
   "author": "Your Name",
-  "license": "MIT",
-  "engines": {
-    "node": ">=14.x"
-  }
+  "license": "MIT"
 }
