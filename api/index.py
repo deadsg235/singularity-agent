@@ -12,7 +12,7 @@ CORS(app)
 
 # Configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 # Simple in-memory token system
 user_tokens = {"default_user": 1000}
@@ -41,13 +41,16 @@ def call_groq(messages, max_tokens=1024):
         from groq import Groq
         client = Groq(api_key=GROQ_API_KEY)
         
-        response = client.chat.completions.create(
-            model=GROQ_MODEL,
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
             messages=messages,
-            max_tokens=max_tokens,
-            temperature=0.7
+            temperature=0.7,
+            max_completion_tokens=max_tokens,
+            top_p=1,
+            stream=False,
+            stop=None
         )
-        return response.choices[0].message.content
+        return completion.choices[0].message.content
     except Exception as e:
         return f"Error: {str(e)}"
 
