@@ -1,124 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULTIMA AI - Neural Interface</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Ultima AI Terminal</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; margin: 0; padding: 20px; }
+        .terminal { max-width: 800px; margin: 0 auto; }
+        .output { height: 400px; overflow-y: auto; border: 1px solid #0f0; padding: 10px; margin-bottom: 10px; }
+        .input-row { display: flex; }
+        input { flex: 1; background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; }
+        button { background: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; }
+        .status { margin-bottom: 10px; }
+    </style>
 </head>
 <body>
-    <div class="neural-interface">
-        <!-- Header -->
-        <div class="interface-header">
-            <div class="system-status">
-                <div class="status-indicator active"></div>
-                <span class="system-name">ULTIMA</span>
-                <span class="version">v2.0</span>
-            </div>
-            <div class="neural-controls">
-                <button class="neural-btn" id="explorerBtn">📁</button>
-                <button class="neural-btn" id="toolsBtn">⚡</button>
-                <button class="neural-btn" id="statusBtn">●</button>
-            </div>
-        </div>
-
-        <!-- Main Interface -->
-        <div class="interface-body">
-            <!-- File Explorer Sidebar -->
-            <div class="file-explorer" id="fileExplorer">
-                <div class="explorer-header">
-                    <span class="explorer-title">PROJECT FILES</span>
-                    <button class="collapse-btn" id="collapseExplorer">◀</button>
-                </div>
-                <div class="file-tree" id="fileTree">
-                    <div class="loading-files">Scanning neural pathways...</div>
-                </div>
-            </div>
-
-            <!-- Terminal Area -->
-            <div class="terminal-area">
-                <div class="terminal-header">
-                    <div class="terminal-tabs">
-                        <div class="tab active">NEURAL_LINK</div>
-                    </div>
-                </div>
-                <div class="terminal-output" id="terminal">
-                    <div class="boot-sequence">
-                        <div class="boot-line">ULTIMA Neural Interface v2.0</div>
-                        <div class="boot-line">Initializing quantum processors... ✓</div>
-                        <div class="boot-line">Establishing neural link... ✓</div>
-                        <div class="boot-line">AI consciousness online.</div>
-                        <div class="prompt-line">
-                            <span class="prompt">ultima@neural:~$</span>
-                            <span class="welcome">Neural interface ready. Begin interaction.</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="terminal-input-area">
-                    <span class="input-prompt">ultima@neural:~$</span>
-                    <input type="text" id="commandInput" class="neural-input" placeholder="Enter neural command..." autocomplete="off">
-                    <button id="sendBtn" class="send-neural">▶</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Status Bar -->
-        <div class="status-bar">
-            <div class="status-left">
-                <span class="status-item">CPU: <span id="cpuUsage">12%</span></span>
-                <span class="status-item">MEM: <span id="memUsage">2.1GB</span></span>
-                <span class="status-item">TOKENS: <span id="tokenCount">Loading...</span></span>
-            </div>
-            <div class="status-right">
-                <span class="status-item">NEURAL_LINK: <span id="connectionStatus">ACTIVE</span></span>
-                <span class="status-item" id="uptime">00:00:00</span>
-            </div>
+    <div class="terminal">
+        <h1>🚀 Ultima AI Terminal</h1>
+        <div class="status">Status: <span id="status">Connecting...</span> | Tokens: <span id="tokens">0</span></div>
+        <div class="output" id="output"></div>
+        <div class="input-row">
+            <input type="text" id="input" placeholder="Enter command or message..." />
+            <button onclick="send()">Send</button>
         </div>
     </div>
 
-    <!-- Tools Modal -->
-    <div id="toolsModal" class="neural-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>⚡ NEURAL TOOLS</h3>
-                <span class="close-btn" id="closeTools">&times;</span>
-            </div>
-            <div class="tools-grid">
-                <button class="tool-card" data-tool="code-read">
-                    <div class="tool-icon">📄</div>
-                    <div class="tool-name">READ CODE</div>
-                </button>
-                <button class="tool-card" data-tool="code-suggest">
-                    <div class="tool-icon">🔧</div>
-                    <div class="tool-name">SUGGEST CHANGES</div>
-                </button>
-                <button class="tool-card" data-tool="tool-generate">
-                    <div class="tool-icon">⚙️</div>
-                    <div class="tool-name">GENERATE TOOL</div>
-                </button>
-                <button class="tool-card" data-tool="prompt-view">
-                    <div class="tool-icon">👁️</div>
-                    <div class="tool-name">VIEW PROMPT</div>
-                </button>
-                <button class="tool-card" data-tool="prompt-suggest">
-                    <div class="tool-icon">💡</div>
-                    <div class="tool-name">SUGGEST PROMPT</div>
-                </button>
-                <button class="tool-card" data-tool="balance">
-                    <div class="tool-icon">💰</div>
-                    <div class="tool-name">TOKEN BALANCE</div>
-                </button>
-                <button class="tool-card" data-tool="purchase">
-                    <div class="tool-icon">🛒</div>
-                    <div class="tool-name">BUY TOKENS</div>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('input');
+        
+        function log(msg) {
+            output.innerHTML += msg + '<br>';
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        async function checkHealth() {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                document.getElementById('status').textContent = data.groq ? 'Online' : 'No API Key';
+            } catch (e) {
+                document.getElementById('status').textContent = 'Offline';
+            }
+        }
+        
+        async function checkTokens() {
+            try {
+                const res = await fetch('/api/token/balance');
+                const data = await res.json();
+                document.getElementById('tokens').textContent = data.balance;
+            } catch (e) {
+                document.getElementById('tokens').textContent = 'Error';
+            }
+        }
+        
+        async function send() {
+            const message = input.value.trim();
+            if (!message) return;
+            
+            log(`> ${message}`);
+            input.value = '';
+            
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message})
+                });
+                const data = await res.json();
+                
+                if (data.error) {
+                    log(`Error: ${data.error}`);
+                } else {
+                    log(`Ultima: ${data.response}`);
+                }
+                checkTokens();
+            } catch (e) {
+                log(`Error: ${e.message}`);
+            }
+        }
+        
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') send();
+        });
+        
+        checkHealth();
+        checkTokens();
+        log('Ultima AI Terminal ready. Type your message and press Enter.');
+    </script>
 </body>
 </html>
