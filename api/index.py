@@ -31,13 +31,15 @@ PROJECT_ROOT = os.path.dirname(PROJECT_ROOT)
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
+    groq_status = "configured" if GROQ_API_KEY else "missing"
     return jsonify({
-        "status": "healthy",
+        "status": "healthy" if GROQ_API_KEY else "degraded",
         "service": "Ultima AI Terminal",
         "version": "2.0.0",
         "ai_model": f"Groq {GROQ_MODEL}",
         "token_system": "Ultima Tokens Active",
-        "llm_provider": "Groq (Fast & Free)"
+        "llm_provider": "Groq (Fast & Free)",
+        "groq_api_key": groq_status
     })
 
 @app.route('/api/self', methods=['GET'])
@@ -76,8 +78,13 @@ def chat():
         {"user_message": user_message[:100]}
     )
 
-    agent = UltimaWebAgent(model_name=GROQ_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
-    response_text = agent.send_message(user_message, chat_history)
+    try:
+        agent = UltimaWebAgent(model_name=GROQ_MODEL, system_prompt=ULTIMA_AGENT_SYSTEM_PROMPT)
+        response_text = agent.send_message(user_message, chat_history)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": f"AI service error: {str(e)}"}), 500
 
     token_module.record_transaction(
         user_id,
