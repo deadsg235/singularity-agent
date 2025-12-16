@@ -4,9 +4,17 @@ import os
 import json
 import time
 from datetime import datetime
-import sys
-sys.path.append('..')
-from dqn_core import dqn
+try:
+    from dqn_core import dqn
+except ImportError as e:
+    print(f"DQN import error: {e}")
+    # Fallback DQN
+    class FallbackDQN:
+        def get_reasoning_analysis(self, query):
+            return {"reasoning_steps": ["Fallback mode"], "confidence": 0.5}
+        def learn_from_interaction(self, user_input, ai_response):
+            return {"state": 0, "action": 0, "reward": 0.0, "q_value": 0.0, "epsilon": 1.0}
+    dqn = FallbackDQN()
 
 app = Flask(__name__)
 CORS(app)
@@ -53,74 +61,117 @@ ultima = UltimaCore()
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    data = request.json
-    message = data.get('message', '')
-    
-    ultima.log_activity("user_message", {"message": message})
-    
-    reasoning = dqn.get_reasoning_analysis(message)
-    response = f"Ultima v{ultima.version}: {ultima.system_prompt} Analysis: {', '.join(reasoning['reasoning_steps'])}. Confidence: {reasoning['confidence']:.2f}"
-    
-    learning_data = dqn.learn_from_interaction(message, response)
-    ultima.log_activity("ai_response", {"response": response, "learning": learning_data})
-    
-    return jsonify({
-        "response": response,
-        "version": ultima.version,
-        "token_address": ultima.token_address,
-        "reasoning": reasoning,
-        "learning": learning_data
-    })
+    try:
+        data = request.json or {}
+        message = data.get('message', '')
+        
+        if not message:
+            return jsonify({"error": "No message provided"}), 400
+        
+        ultima.log_activity("user_message", {"message": message})
+        
+        try:
+            reasoning = dqn.get_reasoning_analysis(message)
+        except Exception as e:
+            reasoning = {"reasoning_steps": ["Error in reasoning"], "confidence": 0.0}
+            print(f"DQN reasoning error: {e}")
+        
+        response = f"Ultima v{ultima.version}: {ultima.system_prompt} Analysis: {', '.join(reasoning['reasoning_steps'])}. Confidence: {reasoning['confidence']:.2f}"
+        
+        try:
+            learning_data = dqn.learn_from_interaction(message, response)
+        except Exception as e:
+            learning_data = {"error": str(e)}
+            print(f"DQN learning error: {e}")
+        
+        ultima.log_activity("ai_response", {"response": response, "learning": learning_data})
+        
+        return jsonify({
+            "response": response,
+            "version": ultima.version,
+            "token_address": ultima.token_address,
+            "reasoning": reasoning,
+            "learning": learning_data
+        })
+    except Exception as e:
+        print(f"Chat endpoint error: {e}")
+        return jsonify({"error": f"Internal error: {str(e)}"}), 500
 
 @app.route('/api/upgrade/prompt', methods=['POST'])
 def upgrade_prompt():
-    data = request.json
-    new_prompt = data.get('prompt', '')
-    
-    success = ultima.update_system_prompt(new_prompt)
-    return jsonify({
-        "success": success,
-        "new_prompt": ultima.system_prompt,
-        "version": ultima.version
-    })
+    try:
+        data = request.json or {}
+        new_prompt = data.get('prompt', '')
+        
+        if not new_prompt:
+            return jsonify({"error": "No prompt provided"}), 400
+        
+        success = ultima.update_system_prompt(new_prompt)
+        return jsonify({
+            "success": success,
+            "new_prompt": ultima.system_prompt,
+            "version": ultima.version
+        })
+    except Exception as e:
+        print(f"Upgrade prompt error: {e}")
+        return jsonify({"error": f"Upgrade failed: {str(e)}"}), 500
 
 @app.route('/api/create-tool', methods=['POST'])
 def create_tool():
-    data = request.json
-    name = data.get('name', '')
-    code = data.get('code', '')
-    
-    success = ultima.create_tool(name, code)
-    return jsonify({
-        "success": success,
-        "tool_name": name,
-        "tools_count": len(ultima.tools)
-    })
+    try:
+        data = request.json or {}
+        name = data.get('name', '')
+        code = data.get('code', '')
+        
+        if not name or not code:
+            return jsonify({"error": "Name and code required"}), 400
+        
+        success = ultima.create_tool(name, code)
+        return jsonify({
+            "success": success,
+            "tool_name": name,
+            "tools_count": len(ultima.tools)
+        })
+    except Exception as e:
+        print(f"Create tool error: {e}")
+        return jsonify({"error": f"Tool creation failed: {str(e)}"}), 500
 
 @app.route('/api/status')
 def status():
-    return jsonify({
-        "version": ultima.version,
-        "system_prompt": ultima.system_prompt,
-        "memory_entries": len(ultima.memory),
-        "tools_created": len(ultima.tools),
-        "upgrades": len(ultima.upgrades),
-        "token_address": ultima.token_address
-    })
+    try:
+        return jsonify({
+            "version": ultima.version,
+            "system_prompt": ultima.system_prompt,
+            "memory_entries": len(ultima.memory),
+            "tools_created": len(ultima.tools),
+            "upgrades": len(ultima.upgrades),
+            "token_address": ultima.token_address
+        })
+    except Exception as e:
+        print(f"Status error: {e}")
+        return jsonify({"error": f"Status failed: {str(e)}"}), 500
 
 @app.route('/api/logs')
 def logs():
-    return jsonify({
-        "logs": ultima.memory[-20:],
-        "total": len(ultima.memory)
-    })
+    try:
+        return jsonify({
+            "logs": ultima.memory[-20:],
+            "total": len(ultima.memory)
+        })
+    except Exception as e:
+        print(f"Logs error: {e}")
+        return jsonify({"error": f"Logs failed: {str(e)}"}), 500
 
 @app.route('/api/tools')
 def tools():
-    return jsonify({
-        "tools": ultima.tools,
-        "count": len(ultima.tools)
-    })
+    try:
+        return jsonify({
+            "tools": ultima.tools,
+            "count": len(ultima.tools)
+        })
+    except Exception as e:
+        print(f"Tools error: {e}")
+        return jsonify({"error": f"Tools failed: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

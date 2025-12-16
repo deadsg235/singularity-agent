@@ -5,12 +5,6 @@ import json
 import time
 from datetime import datetime
 from dqn_core import dqn
-try:
-    from torch_dqn import ultima_dqn
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
-    ultima_dqn = None
 
 app = Flask(__name__)
 CORS(app)
@@ -72,24 +66,14 @@ def chat():
     # Log user interaction
     ultima.log_activity("user_message", {"message": message})
     
-    # DQN reasoning analysis (use PyTorch if available)
-    if TORCH_AVAILABLE and data.get('advanced_mode', False):
-        reasoning = ultima_dqn.get_reasoning_analysis(message)
-        learning_data = ultima_dqn.learn_from_text(message, "")
-        dqn_type = "PyTorch DQN"
-    else:
-        reasoning = dqn.get_reasoning_analysis(message)
-        learning_data = dqn.learn_from_interaction(message, "")
-        dqn_type = "Simple DQN"
+    # DQN reasoning analysis
+    reasoning = dqn.get_reasoning_analysis(message)
     
     # Enhanced response with DQN insights
-    response = f"Ultima v{ultima.version} [{dqn_type}]: {ultima.system_prompt} Analysis: {', '.join(reasoning['reasoning_steps'])}. Confidence: {reasoning['confidence']:.2f}"
+    response = f"Ultima v{ultima.version}: {ultima.system_prompt} Analysis: {', '.join(reasoning['reasoning_steps'])}. Confidence: {reasoning['confidence']:.2f}"
     
-    # Complete learning with actual response
-    if TORCH_AVAILABLE and data.get('advanced_mode', False):
-        learning_data = ultima_dqn.learn_from_text(message, response)
-    else:
-        learning_data = dqn.learn_from_interaction(message, response)
+    # Learn from interaction
+    learning_data = dqn.learn_from_interaction(message, response)
     
     # Log response and learning
     ultima.log_activity("ai_response", {"response": response, "learning": learning_data})

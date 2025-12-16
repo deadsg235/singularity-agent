@@ -73,7 +73,6 @@
                 <input type="text" id="input" placeholder="Enter message or command..." />
                 <button onclick="send()">Send</button>
                 <button onclick="upgradePrompt()">Upgrade</button>
-                <button onclick="toggleAdvanced()" id="advancedBtn">Advanced DQN</button>
             </div>
         </div>
         
@@ -92,7 +91,6 @@
     <script>
         const output = document.getElementById('output');
         const input = document.getElementById('input');
-        let advancedMode = false;
         
         function log(msg, typewriter = false) {
             if (typewriter) {
@@ -131,7 +129,7 @@
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({message, advanced_mode: advancedMode})
+                    body: JSON.stringify({message})
                 });
                 const data = await res.json();
                 
@@ -214,14 +212,6 @@
             } catch (e) {
                 console.error('Failed to update tools:', e);
             }
-        }
-        
-        function toggleAdvanced() {
-            advancedMode = !advancedMode;
-            const btn = document.getElementById('advancedBtn');
-            btn.textContent = advancedMode ? 'PyTorch ON' : 'Advanced DQN';
-            btn.style.background = advancedMode ? 'linear-gradient(45deg, #33ff33, #00cc00)' : 'linear-gradient(45deg, #ff3333, #cc0000)';
-            log(`Advanced DQN mode: ${advancedMode ? 'ENABLED' : 'DISABLED'}`);
         }
         
         input.addEventListener('keypress', (e) => {
